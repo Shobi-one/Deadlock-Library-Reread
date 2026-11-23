@@ -1,0 +1,16 @@
+# Ren'Py build output / caches
+*.rpyc
+*.rpymc
+game/cache/
+game/saves/
+*-dists/
+log.txt
+errors.txt
+traceback.txt
+
+# Valve assets extracted from your own game files - never commit these
+game/images/books/**/*.png
+game/images/books/**/*.webp
+game/images/library/*.png
+game/audio/
+extracted/
