@@ -126,9 +126,13 @@ screen book_detail(book):
                             xsize 860
                             sensitive unlocked
                             action Return(("play", book.id, ch.id))
+                        if unlocked and ch.desc:
+                            text "    [ch.desc]" style "lib_small"
                         if not unlocked:
                             $ need = (" or " if ch.any_of else " and ").join(ch.requires)
-                            if ch.flag:
+                            if ch.flag and not ch.requires:
+                                text "    Reach this chapter in the story to unlock it." style "lib_small"
+                            elif ch.flag:
                                 text "    Make a different choice in chapter [need] to open this path." style "lib_small"
                             else:
                                 text "    Finish chapter [need] first." style "lib_small"

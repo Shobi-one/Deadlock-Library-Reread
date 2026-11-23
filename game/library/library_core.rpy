@@ -23,7 +23,7 @@ init -10 python:
                   that must also be set, so a choice decides which branch opens
         """
 
-        def __init__(self, id, title, label, requires=None, any_of=False, hidden=False, flag=None):
+        def __init__(self, id, title, label, requires=None, any_of=False, hidden=False, flag=None, desc=""):
             self.id = id
             self.title = title
             self.label = label
@@ -31,6 +31,7 @@ init -10 python:
             self.any_of = any_of
             self.hidden = hidden
             self.flag = flag
+            self.desc = desc
 
 
     class VNBook(object):
@@ -70,8 +71,10 @@ init -10 python:
                           self.accent, self.title, (360, 540))
 
 
-    ## Book registry, filled in by library_books.rpy (init 0).
+    ## Book registry. Filled by game/generated/vn_books.rpy (init -1) when the
+    ## converter has been run, otherwise by the placeholder library_books.rpy.
     VN_BOOKS = []
+    VN_GENERATED = False
 
     def vn_register(book):
         VN_BOOKS.append(book)
@@ -125,6 +128,30 @@ init -10 python:
                  xmaximum=w - 40, align=(0.5, 0.5)),
             xysize=size,
         )
+
+    ## ---- Book pages (used by converted chapters) ----
+
+    vn_page_transition = Dissolve(0.2)
+
+    def vn_page_displayable(path):
+        w, h = config.screen_width, config.screen_height
+        if renpy.loadable(path):
+            return Fixed(Solid("#000"), Transform(path, fit="contain", xysize=(w, h), align=(0.5, 0.5)),
+                         xysize=(w, h))
+        name = path.rsplit("/", 1)[-1]
+        return Fixed(
+            Solid("#14110f"),
+            Text("Missing page art\n" + name, size=30, color="#8c8577",
+                 text_align=0.5, align=(0.5, 0.45)),
+            xysize=(w, h))
+
+    def vn_page(path):
+        renpy.scene()
+        renpy.show("vn_page", what=vn_page_displayable(path))
+
+    def vn_wait():
+        """Wait for a click on pages that have no transcript text yet."""
+        renpy.pause()
 
     def vn_sprite(path, color, name):
         return vn_img(path, color, name, (500, 900))

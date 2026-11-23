@@ -16,3 +16,15 @@ image ivy      = vn_sprite("images/books/ivy/ivy.png",           "#4f6b2c", "Ivy
 image holliday = vn_sprite("images/books/holliday/holliday.png", "#8a5a2b", "Holliday")
 
 image bg placeholder = vn_bg("images/bg_placeholder.png", "Background")
+
+## Supporting cast (used by converted transcripts)
+define oathkeeper = Character("Oathkeeper", color="#c0392b", what_italic=True)
+define johann     = Character("Johann Jr.", color="#9fb8d6")
+define dynamo     = Character("Dynamo",     color="#8e7cc3")
+define mcginnis   = Character("McGinnis",   color="#e6a23c")
+define abrams     = Character("Abrams",     color="#b08d57")
+define patron     = Character("Amber Hand", color="#f0c674")
+define fairfax    = Character("Fairfax",    color="#a3a3a3")
+define bebop      = Character("Bebop",      color="#e8794a")
+define hank       = Character("Hank",       color="#c9a86a")
+define shelly     = Character("Ms. Shelly", color="#d4a5c9")

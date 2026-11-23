@@ -14,3 +14,7 @@ game/images/books/**/*.webp
 game/images/library/*.png
 game/audio/
 extracted/
+
+# Generated from Valve data by tools/convert.py
+game/generated/
+game/images/book_pages/
