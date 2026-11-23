@@ -18,67 +18,68 @@ MERGE = {"geist": {"5e": "5d", "5f": "5d", "5h": "5g"}}
 
 
 def clean(s):
+    s = re.sub(r"<small>.*?</small>", "", s)
     s = re.sub(r"<center>.*$", "", s)                     # trailing "Followed by" blocks
-    s = re.sub(r"</?(center|small)>", "", s)
-    s = re.sub(r"\{\{PageRef\|name=([^}|]+)[^}]*\}\}", r"\1", s)
+    s = re.sub(r"</?(center|small)>|<br\s*/?>", " ", s)
+    s = re.sub(r"\{\{(?:PageRef|HeroIcon)\|name=[^}|]*\|alt_name=([^}|]+)[^}]*\}\}", r"\1", s)
+    s = re.sub(r"\{\{(?:PageRef|HeroIcon)\|(?:name=)?([^}|]+)[^}]*\}\}", r"\1", s)
     s = re.sub(r"\[\[[^\]|]*\|([^\]]*)\]\]", r"\1", s)
     s = re.sub(r"\[\[([^\]]*)\]\]", r"\1", s)
     s = s.replace("'''", "").replace("''", "")
     return re.sub(r"\s+", " ", s).strip()
 
 
+SKIP_PHRASES = ("To be continued", "End of chapter", "End of route", "End of storyline",
+                "Follows from", "Transcription of", "As there exist no voice lines",
+                "Most of the chapters", "has no voice lines")
+
+
 def parse(path, book):
+    """{chapter id: [(kind, speaker, text)]}, kind = line | direction | gap"""
     merge = MERGE.get(book, {})
     chapters, cur, skip = {}, None, False
     for raw in open(path, encoding="utf-8"):
         line = raw.rstrip("\n")
-        m = re.match(r"^==\s*(.+?)\s*==\s*$", line)
+        m = re.match(r"^(=+)\s*(.+?)\s*\1\s*$", line)
         if m:
-            title = m.group(1)
-            cm = re.match(r"(?:Chapter\s+)?(\d+[a-z]?)\b", title)
-            cur = merge.get(cm.group(1), cm.group(1)) if cm else None
-            chapters.setdefault(cur, [])
+            cm = re.match(r"(?:Chapter\s+)?(\d+[a-z]?)\b", clean(m.group(2)))
+            if cm:
+                cur = merge.get(cm.group(1), cm.group(1))
+                chapters.setdefault(cur, [])
             skip = False
             continue
-        if cur is None or re.match(r"^=[^=]", line):
-            continue
         st = line.strip()
-        if not st:
+        if cur is None or not st or st.startswith("{{"):
             continue
-        # skip choice blocks, "Featured heroes", "Follows from", "If X was chosen", end markers
-        if st.startswith("<center>") and "Choice" not in st and "Followed" not in st and "Featured" not in st:
-            pass
-        if "Followed by" in st:
-            st = st[:st.index("<center>")] if "<center>" in st else ""
-            skip = True
-            sp = re.match(r"^'''(.+?)'''\s*(.*)$", st)
-            if sp and ":" in clean(sp.group(1)) and clean(sp.group(2)):
-                chapters[cur].append(("line", clean(sp.group(1)).rstrip(":").strip(), clean(sp.group(2))))
-            elif clean(st):
-                chapters[cur].append(("direction", "", clean(st)))
-            continue
-        if "Choice between" in st or "Featured heroes" in st:
-            skip = True
-            continue
-        if skip:
+        if "Choice between" in st or "Featured heroes" in st or "Followed by" in st:
+            head = st.split("<center>")[0] if ("Followed by" in st and "<center>" in st) else ""
+            skip = "<center>" in st or st.startswith("<center>") or "'''Followed by" in st
+            if "</center>" in st:
+                skip = False
+            if not head.strip():
+                continue
+            st = head
+        elif skip:
             if "</center>" in st:
                 skip = False
             continue
-        if st.startswith("<small>") or st.startswith("<center>") or st.startswith("</center>") \
-                or re.match(r"^'''If .* was chosen:'''", st) or st.startswith("{{"):
-            continue
-        sp = re.match(r"^'''(.+?)'''\s*(.*)$", st)
-        if sp and ":" in clean(sp.group(1)):
-            who = clean(sp.group(1)).rstrip(":").strip()
-            text = clean(sp.group(2))
-            if who.endswith(":"):
-                who = who[:-1]
-            if text:
-                chapters[cur].append(("line", who, text))
+        if re.match(r"^'''If .* was chosen:'''", st) or st in ("<center>", "</center>"):
             continue
         text = clean(st)
-        if text and text.strip(". ") :
-            chapters[cur].append(("direction", "", text))
+        if not text or any(p in text for p in SKIP_PHRASES) or re.fullmatch(r"[.\s]*", text):
+            continue
+        if re.fullmatch(r"\(\.\.\.[)}]", text):
+            chapters[cur].append(("gap", "", "")); continue
+        is_direction = st.startswith("''") and not st.startswith("'''")
+        sp = None if is_direction else re.match(r"^([^:!?\[\]]{1,40}):\s*(.*)$", text)
+        if sp:
+            who, said = sp.group(1).strip(), sp.group(2).strip()
+            if re.fullmatch(r"\(\.\.\.[)}]?", said):
+                chapters[cur].append(("gap", who, ""))
+            elif said:
+                chapters[cur].append(("line", who, said))
+            continue
+        chapters[cur].append(("direction", "", text))
     return chapters
 
 
@@ -105,7 +106,8 @@ def durations():
 
 
 # speakers whose voice lines Valve removed: their lines sit on silent pages
-UNVOICED = {"geist": {"infernus"}}
+UNVOICED = {"geist": {"infernus"}, "holliday": {"larry"}}
+GAP = "\x00gap"
 
 
 def align(lines, slots, unvoiced=()):
@@ -113,7 +115,7 @@ def align(lines, slots, unvoiced=()):
     lines: [(speaker, text)]; slots: [duration or None (silent page)].
     Returns spans[i] = (start, end) slot indices (end exclusive) or None."""
     L, P = len(lines), len(slots)
-    total_c = sum(len(t) for w, t in lines if w.lower() not in unvoiced) or 1
+    total_c = sum(len(t) for w, t in lines if w.lower() not in unvoiced and t != GAP) or 1
     total_d = sum(d for d in slots if d) or 1
     rate = total_c / total_d                      # characters per second for this chapter
     INF = float("inf")
@@ -136,6 +138,10 @@ def align(lines, slots, unvoiced=()):
                 relax(i, j, i + 1, j, c + 2.0, "skip")  # line with no slot
                 who, text = lines[i]
                 n = len(text)
+                if text == GAP:                          # line with no audio and no transcript
+                    if j < P:
+                        relax(i, j, i + 1, j + 1, c + (0.0 if slots[j] is None else 1.5), 1)
+                    continue
                 silent_speaker = who.lower() in unvoiced
                 if j < P and slots[j] is None:          # silent page: one line
                     relax(i, j, i + 1, j + 1, c + (0.0 if silent_speaker else 0.9), 1)
@@ -181,6 +187,20 @@ def split_text(text, parts):
     return pieces
 
 
+def even_spread(cps, items, cid):
+    rows, P, N = [], len(cps), len(items)
+    slots = {}
+    for k, it in enumerate(items):
+        slots.setdefault(min(P - 1, k * P // N), []).append(it)
+    for n, p in enumerate(cps):
+        its = [it for it in slots.get(n, []) if it[0] != "gap"]
+        if not its:
+            rows.append([p["page"], cid, p["audio"], "", ""])
+        for kind, who, t in its:
+            rows.append([p["page"], cid, p["audio"], who if kind == "line" else "narrator", t])
+    return rows
+
+
 def main():
     book, src = sys.argv[1], sys.argv[2]
     tsv = os.path.join(ROOT, "extracted", "text", book + ".tsv")
@@ -197,10 +217,16 @@ def main():
         cps = [p for p in pages if p["chapter"] == cid]
         items = list(wiki.get(cid, []))
         vo_idx = [n for n, p in enumerate(cps) if "_sfx_" not in p["audio"]]
-        line_items = [n for n, it in enumerate(items) if it[0] == "line"]
-        spans = align([(items[n][1], items[n][2]) for n in line_items],
-                      [dur.get(cps[n]["audio"]) if cps[n]["audio"] else None for n in vo_idx],
-                      UNVOICED.get(book, ()))
+        line_items = [n for n, it in enumerate(items) if it[0] in ("line", "gap")]
+        slots = [dur.get(cps[n]["audio"]) for n in vo_idx]
+        if items and not any(slots):
+            # no audio at all in this chapter: spread everything evenly over the pages
+            out_rows = even_spread(cps, items, cid)
+            out += out_rows
+            report.append("%-4s %3d pages, no audio: %d items spread evenly" % (cid, len(cps), len(items)))
+            continue
+        spans = align([(items[n][1], GAP if items[n][0] == "gap" else items[n][2]) for n in line_items],
+                      slots, UNVOICED.get(book, ()))
 
         texts = {n: [] for n in range(len(cps))}     # page index -> [(speaker, text)]
         placed_lines = 0
@@ -211,6 +237,10 @@ def main():
             if it[0] == "direction":
                 pending_dirs.append(it[2]); continue
             span = spans[li]; li += 1
+            if it[0] == "gap":
+                if span is not None:
+                    prev_end_page = vo_idx[span[1] - 1]
+                continue
             if span is None:
                 # no clip: attach to the previous page so the text isn't lost
                 target = max(prev_end_page, 0)
@@ -238,7 +268,7 @@ def main():
             texts[rest[0] if rest else max(prev_end_page, 0)].append(("", d))
 
         unused = sum(1 for n in vo_idx if not texts[n] and cps[n]["audio"])
-        nolines = sum(1 for s in spans if s is None)
+        nolines = sum(1 for k, s_ in zip(line_items, spans) if s_ is None and items[k][0] == "line")
         report.append("%-4s %3d clips  %3d wiki lines  %2d clips without text  %2d lines without clip" % (
             cid, len(vo_idx), len(line_items), unused, nolines))
         for n, p in enumerate(cps):

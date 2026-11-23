@@ -18,3 +18,4 @@ extracted/
 # Generated from Valve data by tools/convert.py
 game/generated/
 game/images/book_pages/
+__pycache__/
