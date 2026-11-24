@@ -19,3 +19,4 @@ extracted/
 game/generated/
 game/images/book_pages/
 __pycache__/
+game/images/book_art/

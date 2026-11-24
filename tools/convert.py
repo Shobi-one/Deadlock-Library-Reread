@@ -147,6 +147,8 @@ class BookConverter(object):
         self.root_chapter = None
         self.pages = []          # (chapter, page_key, image path, audio name) for checklist/template
         self.missing_audio = set()
+        self.last_speaker = None
+        self.speaker_count = {}
         self._walk_links(self.pagelist)
 
     # chapter graph from BookPageList
@@ -181,7 +183,18 @@ class BookConverter(object):
         slot = os.path.basename(audio) if audio else (re.sub(r"_book$", "", snd) + "  (missing)" if snd else "")
         self.pages.append((cid, key, path, audio or "", slot))
 
-        out.append(ind + "$ vn_page(%s)" % rpy_str(path))
+        lines_here = self.text.get(key) or []
+        for sp, _ in lines_here:
+            if sp and sp.lower() not in ("narrator", "-"):
+                self.last_speaker = SPEAKERS.get(sp.lower()) or slug(sp)
+                break
+        for sp, _ in lines_here:
+            if sp and sp.lower() not in ("narrator", "-"):
+                k = (SPEAKERS.get(sp.lower()) or slug(sp), sp)
+                self.speaker_count[k] = self.speaker_count.get(k, 0) + 1
+        out.append(ind + "$ vn_page(%s, bg=%s, who=%s)" % (
+            rpy_str(path), rpy_str("%s_%s" % (self.id, cid)),
+            rpy_str(self.last_speaker) if self.last_speaker else "None"))
         out.append(ind + "with vn_page_transition")
         lines = self.text.get(key)
         # play the clip with the first spoken line (stage directions come first on some pages)
@@ -253,6 +266,7 @@ class BookConverter(object):
             kids = self.children.get(cid, [])
             terminal = not kids
 
+            self.last_speaker = None
             out.append("label %s:" % self.label(cid))
             out.append("    $ vn_flag(%s)" % rpy_str("%s_reached_%s" % (self.id, cid)))
             had_menu = self.emit_nodes(list(chap), cid, out, "    ", terminal, [])
@@ -323,6 +337,8 @@ def main():
                  "Missing pages show a placeholder; this list is regenerated on every run.", ""]
     warnings = []
     summary = []
+    art_needed = ["# Wiki art needed", "",
+                  "Keys to use in game/library/art_map.rpy. Characters sorted by how many pages they speak on.", ""]
 
     for book in BOOKS:
         src = os.path.join(DECOMP, book["layout"] + ".xml")
@@ -345,6 +361,14 @@ def main():
         for name in sorted(conv.missing_audio):
             warnings.append("%s: no audio file for sound '%s'" % (book["id"], name))
 
+        art_needed.append("## %s" % book["title"])
+        art_needed.append("\nBackgrounds (VN_BG): `%s` for the whole book, or per chapter:\n" % book["id"])
+        for cid, title, desc, _ in reg:
+            art_needed.append("- `%s_%s`  %s" % (book["id"], cid, title))
+        art_needed.append("\nCharacters (VN_CHAR):\n")
+        for (k, name), n in sorted(conv.speaker_count.items(), key=lambda x: -x[1]):
+            art_needed.append("- `%s`  %s (%d pages)" % (k, name, n))
+        art_needed.append("")
         checklist.append("## %s (%d/%d)" % (book["title"], have, len(conv.pages)))
         if book["layout"] in covers:
             checklist.append("- cover: `images/books/%s/cover.png` (Valve name: %s)" % (book["id"], covers[book["layout"]]))
@@ -357,6 +381,8 @@ def main():
             checklist.append("- [%s] `%s`" % (mark, path))
         checklist.append("")
 
+    with open(os.path.join(ROOT, "extracted", "wiki_art_needed.md"), "w", encoding="utf-8") as f:
+        f.write("\n".join(art_needed) + "\n")
     with open(os.path.join(OUT, "vn_books.rpy"), "w", encoding="utf-8") as f:
         f.write("\n".join(registry) + "\n")
     with open(os.path.join(ROOT, "extracted", "art_checklist.md"), "w", encoding="utf-8") as f:

@@ -118,9 +118,12 @@ init -10 python:
     ## placeholder disappears.
 
     def vn_img(path, color, text, size):
-        if renpy.loadable(path):
-            return path
         w, h = size
+        if renpy.loadable(path):
+            # scale real art to the slot (covers, sprites, backgrounds)
+            return Fixed(Solid("#0b0a09"),
+                         Transform(path, fit="contain", xysize=size, align=(0.5, 0.5)),
+                         xysize=size)
         return Fixed(
             Solid(color, xysize=size),
             Solid("#00000055", xysize=(w - 16, h - 16), align=(0.5, 0.5)),
@@ -133,21 +136,38 @@ init -10 python:
 
     vn_page_transition = Dissolve(0.2)
 
-    def vn_page_displayable(path):
-        w, h = config.screen_width, config.screen_height
-        if renpy.loadable(path):
-            return Fixed(Solid("#000"), Transform(path, fit="contain", xysize=(w, h), align=(0.5, 0.5)),
-                         xysize=(w, h))
-        name = path.rsplit("/", 1)[-1]
-        return Fixed(
-            Solid("#14110f"),
-            Text("Missing page art\n" + name, size=30, color="#8c8577",
-                 text_align=0.5, align=(0.5, 0.45)),
-            xysize=(w, h))
+    def vn_art(rel):
+        if not rel:
+            return None
+        path = "images/book_art/" + rel
+        return path if renpy.loadable(path) else None
 
-    def vn_page(path):
+    def vn_page(path, bg=None, who=None):
+        """Show a book page: the original page image if present, otherwise a scene
+        rebuilt from wiki art (chapter background + the speaking character)."""
+        global vn_page_art
+        w, h = config.screen_width, config.screen_height
         renpy.scene()
-        renpy.show("vn_page", what=vn_page_displayable(path))
+        vn_page_art = renpy.loadable(path)
+        if vn_page_art:
+            renpy.show("vn_page", what=Fixed(Solid("#000"),
+                Transform(path, fit="contain", xysize=(w, h), align=(0.5, 0.5)), xysize=(w, h)))
+            return
+        book = (bg or "").split("_")[0]
+        bg_img = vn_art(VN_BG.get(bg)) or vn_art(VN_BG.get(book))
+        if bg_img:
+            renpy.show("vn_bg", what=Transform(bg_img, fit="cover", xysize=(w, h)))
+        else:
+            renpy.show("vn_bg", what=Fixed(Solid("#14110f"),
+                Solid("#c9a86a10", xysize=(w, int(h * 0.62)), yalign=1.0), xysize=(w, h)))
+        char = vn_art(VN_CHAR.get(who))
+        if char:
+            renpy.show("vn_char", what=Transform(char, fit="contain", xysize=(int(w * 0.6), int(h * 0.92)),
+                                                 xalign=0.5, yalign=1.0))
+
+    def vn_hide_textbox():
+        """True on pages whose original art already contains the dialogue."""
+        return vn_page_art and not persistent.vn_textbox_over_art
 
     def vn_wait():
         """Wait for a click on pages that have no transcript text yet."""
@@ -163,3 +183,11 @@ init -10 python:
 default persistent.vn_completed = set()
 default persistent.vn_endings = set()
 default persistent.vn_flags = set()
+
+## Original pages have their dialogue drawn in, so our text box hides on them
+## (lines still go to History). Players can turn it back on in Preferences.
+default vn_page_art = False
+default persistent.vn_textbox_over_art = False
+
+transform vn_textbox_alpha(hidden):
+    alpha (0.0 if hidden else 1.0)

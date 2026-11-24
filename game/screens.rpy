@@ -99,6 +99,7 @@ screen say(who, what):
 
     window:
         id "window"
+        at vn_textbox_alpha(vn_hide_textbox())
 
         if who is not None:
 
@@ -755,6 +756,11 @@ screen preferences():
                     textbutton _("Unseen Text") action Preference("skip", "toggle")
                     textbutton _("After Choices") action Preference("after choices", "toggle")
                     textbutton _("Transitions") action InvertSelected(Preference("transitions", "toggle"))
+
+                vbox:
+                    style_prefix "check"
+                    label _("Book Pages")
+                    textbutton _("Text Box Over Art") action ToggleField(persistent, "vn_textbox_over_art")
 
                 ## Additional vboxes of type "radio_pref" or "check_pref" can be
                 ## added here, to add additional creator-defined preferences.
