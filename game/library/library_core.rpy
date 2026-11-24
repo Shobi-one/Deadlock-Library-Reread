@@ -104,6 +104,11 @@ init -10 python:
         "library_future_label": "About this port",
         "library_future_desc": "An unofficial fan preservation of Valve's unreleased visual novels, rebuilt in Ren'Py.",
         "library_available": "Available Books",
+        "library_progress": "[pct_complete]% Complete",
+        "reader_prev": "Back",
+        "reader_next": "Next",
+        "reader_play": "Play",
+        "reader_pause": "Pause",
     }
     VN_STR = {}
 

@@ -25,8 +25,12 @@ style dl_disclaimer_small is dl_text:
     color "#FFEFD780"
     line_spacing 4
 
-screen dl_disclaimer():
+screen dl_disclaimer(from_menu=False):
     modal True
+    zorder 200
+    # first boot: called from splashscreen -> Return(); from About: shown on
+    # top of the menu -> just hide it
+    $ done = Hide("dl_disclaimer") if from_menu else Return()
 
     add Solid("#000000")
     if dl_ui("library_bg"):
@@ -69,7 +73,9 @@ screen dl_disclaimer():
                 text_size 24
                 padding (40, 14)
                 xalign 1.0
-                action Return()
+                action done
 
-    key "K_RETURN" action Return()
-    key "K_SPACE" action Return()
+    key "K_RETURN" action done
+    key "K_SPACE" action done
+    if from_menu:
+        key "game_menu" action done

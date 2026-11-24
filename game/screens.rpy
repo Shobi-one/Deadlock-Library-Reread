@@ -534,7 +534,7 @@ screen about():
 
             textbutton _("READ THE DISCLAIMER"):
                 style "dl_unlock_button"
-                action ShowMenu("dl_disclaimer")
+                action Show("dl_disclaimer", from_menu=True)
             null height 30
 
             text _("Made with {a=https://www.renpy.org/}Ren'Py{/a} [renpy.version_only].\n\n[renpy.license!t]")

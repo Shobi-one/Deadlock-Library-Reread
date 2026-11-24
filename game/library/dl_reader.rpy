@@ -153,14 +153,14 @@ screen dl_reader():
     $ leave = nav or Confirm(_("Return to the chapter select?\nThis chapter will not be marked as finished."),
                              Jump("vn_leave_chapter"))
 
-    use dl_keyhint(18, "ESC", _("BACK"), leave)
+    use dl_keyhint(18, "ESC", vn_str("reader_prev").upper(), leave)
     key "K_ESCAPE" action leave
 
     # Valve hides back / play / next while a choice is on screen
     if not choosing:
-        use dl_keyhint(540, "left", _("BACK"), Rollback())
-        use dl_keyhint(900, "SPACE", (_("STOP") if auto else _("PLAY")), Preference("auto-forward", "toggle"))
-        use dl_keyhint(1296, "right", _("NEXT"), Return(True))
+        use dl_keyhint(540, "left", vn_str("reader_prev").upper(), Rollback())
+        use dl_keyhint(900, "SPACE", (vn_str("reader_pause") if auto else vn_str("reader_play")).upper(), Preference("auto-forward", "toggle"))
+        use dl_keyhint(1296, "right", vn_str("reader_next").upper(), Return(True))
 
         key "K_LEFT" action Rollback()
         key "K_RIGHT" action Return(True)

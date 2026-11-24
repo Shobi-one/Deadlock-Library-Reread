@@ -253,6 +253,17 @@ screen library():
         null height 10
         text vn_str("library_future_desc") style "dl_future_text"
 
+        # Valve's text above is from the playtest; say what's different here
+        if "library_desc" in VN_STR:
+            null height 50
+            hbox:
+                spacing 14
+                add Solid("#65951D") xsize 3 ysize 130
+                vbox:
+                    spacing 8
+                    text _("RESTORATION NOTE") style "dl_future_title" color "#7CBC1D"
+                    text _("There are no matches or keys in this restoration: every chapter is free to read, and your choices only change the story.") style "dl_future_text" xmaximum 430
+
     $ n = len(VN_BOOKS)
     $ cw = 300 if n <= 3 else 255
     $ ch = int(cw * 4 / 3)
@@ -287,7 +298,7 @@ screen library():
                                 frame:
                                     xsize cw ysize 40
                                     background Solid("#666666")
-                                    text "[pct]% Complete" style "dl_footer" align (0.5, 0.5)
+                                    text vn_str("library_progress").replace("[pct_complete]", str(pct)) style "dl_footer" align (0.5, 0.5)
 
     textbutton _("RESET PROGRESS"):
         style "dl_unlock_button"
