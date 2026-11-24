@@ -174,16 +174,21 @@ init -10 python:
         path = "images/book_art/" + rel
         return path if renpy.loadable(path) else None
 
-    def vn_page(path, bg=None, who=None):
-        """Show a book page: the original page image if present, otherwise a scene
-        rebuilt from wiki art (chapter background + the speaking character)."""
+    def vn_page(path, bg=None, who=None, intro=False):
+        """Show a book page in Valve's 1700x956 reader viewer if the original
+        page image exists, otherwise a scene rebuilt from wiki art."""
         global vn_page_art
         w, h = config.screen_width, config.screen_height
+        vx, vy, vw, vh = DL_VIEWER
         renpy.scene()
+        store.quick_menu = False        # Valve's reader controls replace it
+        renpy.show_screen("dl_reader")
         vn_page_art = renpy.loadable(path)
         if vn_page_art:
-            renpy.show("vn_page", what=Fixed(Solid("#000"),
-                Transform(path, fit="contain", xysize=(w, h), align=(0.5, 0.5)), xysize=(w, h)))
+            renpy.show("vn_page", what=Solid("#000000", xysize=(w, h)))
+            renpy.show("vn_pageimg",
+                       what=Transform(path, fit="contain", xysize=(vw, vh), xpos=vx, ypos=vy),
+                       at_list=[dl_page_color_in] if intro else [])
             return
         book = (bg or "").split("_")[0]
         bg_img = vn_art(VN_BG.get(bg)) or vn_art(VN_BG.get(book))

@@ -149,6 +149,12 @@ class BookConverter(object):
         self.missing_audio = set()
         self.last_speaker = None
         self.speaker_count = {}
+        self.first_page = False
+        self.chapter_thumb = {}
+        for chap in self.chapters:
+            first = chap.find(".//BookImagePage")
+            if first is not None and first.get("img"):
+                self.chapter_thumb[short_id(chap.get("id"))] = page_path(first.get("img"))
         self._walk_links(self.pagelist)
 
     # chapter graph from BookPageList
@@ -192,9 +198,11 @@ class BookConverter(object):
             if sp and sp.lower() not in ("narrator", "-"):
                 k = (SPEAKERS.get(sp.lower()) or slug(sp), sp)
                 self.speaker_count[k] = self.speaker_count.get(k, 0) + 1
-        out.append(ind + "$ vn_page(%s, bg=%s, who=%s)" % (
+        out.append(ind + "$ vn_page(%s, bg=%s, who=%s%s)" % (
             rpy_str(path), rpy_str("%s_%s" % (self.id, cid)),
-            rpy_str(self.last_speaker) if self.last_speaker else "None"))
+            rpy_str(self.last_speaker) if self.last_speaker else "None",
+            ", intro=True" if self.first_page else ""))
+        self.first_page = False
         out.append(ind + "with vn_page_transition")
         lines = self.text.get(key)
         # play the clip with the first spoken line (stage directions come first on some pages)
@@ -239,7 +247,9 @@ class BookConverter(object):
                 out.append(ind + "menu:")
                 for ch in run:
                     prompt = ch.get("prompt", "Continue")
-                    out.append(ind + "    %s:" % rpy_str(prompt))
+                    first = ch.find(".//BookImagePage")
+                    thumb = page_path(first.get("img")) if first is not None and first.get("img") else ""
+                    out.append(ind + "    %s (thumb=%s):" % (rpy_str(prompt), rpy_str(thumb)))
                     body_start = len(out)
                     sub_path = path + [slug(prompt)]
                     sub_menu = self.emit_nodes(list(ch), cid, out, ind + "        ", terminal, sub_path)
@@ -269,6 +279,7 @@ class BookConverter(object):
             terminal = not kids
 
             self.last_speaker = None
+            self.first_page = True
             out.append("label %s:" % self.label(cid))
             out.append("    $ vn_flag(%s)" % rpy_str("%s_reached_%s" % (self.id, cid)))
             had_menu = self.emit_nodes(list(chap), cid, out, "    ", terminal, [])
@@ -276,9 +287,9 @@ class BookConverter(object):
             if kids:
                 out.append("    menu:")
                 for prompt, child in kids:
-                    out.append("        %s:" % rpy_str(prompt))
+                    out.append("        %s (thumb=%s):" % (rpy_str(prompt), rpy_str(self.chapter_thumb.get(child, ""))))
                     out.append("            jump %s" % self.label(child))
-                out.append('        "(Return to the Library)":')
+                out.append('        "Back to chapter select" (kind="nav"):')
                 out.append("            return")
             else:
                 if not had_menu:

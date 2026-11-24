@@ -205,12 +205,8 @@ style input:
 ##
 ## https://www.renpy.org/doc/html/screen_special.html#choice
 
-screen choice(items):
-    style_prefix "choice"
-
-    vbox:
-        for i in items:
-            textbutton i.caption action i.action
+## The choice screen is replaced by Valve's image choice cards:
+## see screen choice in game/library/dl_reader.rpy
 
 
 style choice_vbox is vbox
