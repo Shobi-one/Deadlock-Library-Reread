@@ -39,9 +39,9 @@ screen dl_disclaimer(from_menu=False):
     frame:
         xalign 0.5 yalign 0.5
         xsize 1040
-        background Solid("#10130Df0")
-        padding (80, 64, 80, 56)
-        at dl_fade_up(0.1)
+        background dl_modal_bg()          # Valve's popup paper + soft edge mask
+        padding (90, 72, 90, 64)
+        at dl_popup_in(0.1)
 
         vbox:
             spacing 0
@@ -56,7 +56,7 @@ screen dl_disclaimer(from_menu=False):
             text _("The Library Reread brings back {b}the Library{/b}: the visual novels Valve made for Deadlock in 2024 and later removed from the game."):
                 style "dl_disclaimer_text"
             null height 18
-            text _("Everything here was recovered from old game builds and community archives. Valve never finished the Library, so the books are in different states: some are complete, while others are missing {b}artwork{/b}, {b}voice lines{/b}, {b}sound effects{/b}."):
+            text _("Everything here was recovered from old game builds and community archives. Valve never finished the Library, so the books are in different states. Only Lady Geist's and Infernus's books were ever illustrated; Ivy's and Holliday's were voiced and written but {b}never got artwork{/b}, and some pages are missing {b}voice lines{/b} or {b}sound effects{/b}."):
                 style "dl_disclaimer_text"
             null height 18
             text _("Expect rough edges. That is part of what is being preserved."):

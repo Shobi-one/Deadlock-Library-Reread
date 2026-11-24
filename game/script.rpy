@@ -29,7 +29,7 @@ label book_loop:
     call expression lib_label from lib_call_chapter
     hide screen dl_reader
     $ vn_page_art = False
-    $ quick_menu = True
+    $ quick_menu = False
     $ vn_complete(lib_book_id, lib_chapter_id)
 
     scene black with dissolve

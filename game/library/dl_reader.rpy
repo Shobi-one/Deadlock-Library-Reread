@@ -65,7 +65,7 @@ init python:
 label vn_leave_chapter:
     hide screen dl_reader
     $ vn_page_art = False
-    $ quick_menu = True
+    $ quick_menu = False
     $ renpy.pop_call()
     scene black with dissolve
     jump book_loop
@@ -82,44 +82,51 @@ label vn_leave_chapter:
 ## Colours / sizes measured from an in-game capture of Valve's reader
 ## (scaled to 1080p): caps 24px tall, labels ~19px, everything cream at
 ## ~35% (hover x1.3 and 2px lift, from citadel_dashboard_footer_bar).
-## Fonts: measured against an in-game capture, the hints are a heavy
-## grotesque (Arial Bold, Panorama's fallback). Liberation Sans Bold (SIL
-## OFL, metric-identical to Arial): label 20px, caps 14px, sizes fitted to
-## the capture's glyph widths (BACK 56px, ESC cap 44px, SPACE cap 64px).
+## Fonts: Valve's CSS asks for Radiance (base.css), but the live game draws
+## this footer in a bold Arial-style grotesque (side-by-side captures). We
+## match what's on screen: Liberation Sans Bold (SIL OFL, Arial metrics),
+## sized from the capture (BACK 56px wide, ESC cap 44px, SPACE cap 64px).
+## The game's text is heavier than Arial Bold (the engine emboldens it again),
+## so both styles also set bold True for Ren'Py's synthetic bold.
+define DL_HINT_FONT = "gui/fonts/LiberationSans-Bold.ttf"
+define DL_HINT_CAP_FONT = "gui/fonts/LiberationSans-Bold.ttf"
 
 define DL_HINT_IDLE  = "#5C564D"
 define DL_HINT_HOVER = "#787064"
 define DL_CAP_IDLE   = "#524D46"
 define DL_CAP_HOVER  = "#6B645B"
 
-transform dl_hint_lift:
+# hover: colour fades lighter (no movement). Everything is drawn in the
+# hover colours and dimmed to the idle ones (#5C564D / #787064 = 0.77).
+transform dl_hint_fade:
     on idle:
-        ease 0.1 yoffset 0
+        ease 0.15 matrixcolor TintMatrix("#c4c4c4")
     on hover:
-        ease 0.1 yoffset -2
+        ease 0.15 matrixcolor TintMatrix("#ffffff")
 
 style dl_hint_button is button:
     background None
     padding (0, 0)
 
 style dl_hint_label is default:
-    font "gui/fonts/LiberationSans-Bold.ttf"
+    font DL_HINT_FONT
     size 20
-    idle_color DL_HINT_IDLE
-    hover_color DL_HINT_HOVER
+    bold True          # Panorama draws bold-on-bold: synthetic emboldening
+    color DL_HINT_HOVER
     selected_idle_color DL_HINT_HOVER
     selected_hover_color DL_HINT_HOVER
 
 style dl_hint_cap is default:
-    font "gui/fonts/LiberationSans-Bold.ttf"
-    size 14
+    font DL_HINT_CAP_FONT
+    size 13
+    bold True
     color "#040503"
 
 style dl_hint_capframe is frame:
-    idle_background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix(DL_CAP_IDLE)), 4, 4)
+    idle_background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix(DL_CAP_HOVER)), 4, 4)
     hover_background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix(DL_CAP_HOVER)), 4, 4)
     selected_idle_background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix(DL_CAP_HOVER)), 4, 4)
-    ysize 24
+    ysize 25
     yalign 0.5
 
 screen dl_keyhint(x, cap, label, act):
@@ -130,17 +137,24 @@ screen dl_keyhint(x, cap, label, act):
         action act
         hbox:
             spacing 6
-            at dl_hint_lift
+            at dl_hint_fade
             if cap in ("left", "right"):
                 frame:
                     style "dl_hint_capframe"
                     padding (0, 0)
-                    xsize 24
-                    add ("gui/dl_tri_left.png" if cap == "left" else "gui/dl_tri_right.png") align (0.5, 0.5)
+                    xsize 25
+                    # Valve's glyph (panorama/images/glyphs/keyboard_arrow_*), white
+                    # on a 148px canvas: shown full-cap and tinted to the key text
+                    # colour. Falls back to our own triangle if not extracted.
+                    $ glyph = dl_ui("glyph_arrow_" + cap)
+                    if glyph:
+                        add Transform(glyph, xysize=(24, 24), matrixcolor=TintMatrix("#040503")) align (0.5, 0.5)
+                    else:
+                        add ("gui/dl_tri_left.png" if cap == "left" else "gui/dl_tri_right.png") align (0.5, 0.5)
             else:
                 frame:
                     style "dl_hint_capframe"
-                    padding (7, 0)
+                    padding (8, 0)
                     text cap style "dl_hint_cap" align (0.5, 0.5)
             text label style "dl_hint_label" yalign 0.5
 
@@ -156,13 +170,16 @@ screen dl_reader():
     use dl_keyhint(18, "ESC", vn_str("reader_prev").upper(), leave)
     key "K_ESCAPE" action leave
 
-    # Valve hides back / play / next while a choice is on screen
-    if not choosing:
+    # Valve: no previous-page hint on a chapter's first page (back="0");
+    # while choices are up, only BACK stays (play / next are hidden)
+    if not vn_page_first:
         use dl_keyhint(540, "left", vn_str("reader_prev").upper(), Rollback())
+        key "K_LEFT" action Rollback()
+
+    if not choosing:
         use dl_keyhint(900, "SPACE", (vn_str("reader_pause") if auto else vn_str("reader_play")).upper(), Preference("auto-forward", "toggle"))
         use dl_keyhint(1296, "right", vn_str("reader_next").upper(), Return(True))
 
-        key "K_LEFT" action Rollback()
         key "K_RIGHT" action Return(True)
         key "K_SPACE" action Preference("auto-forward", "toggle")
 

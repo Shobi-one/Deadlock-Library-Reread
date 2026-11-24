@@ -258,7 +258,7 @@ screen quick_menu():
 init python:
     config.overlay_screens.append("quick_menu")
 
-default quick_menu = True
+default quick_menu = False   # never used: the Library and Valve's reader have their own controls
 
 style quick_menu is hbox
 style quick_button is default
@@ -416,7 +416,7 @@ screen game_menu(title, scroll=None, yinitial=0.0, spacing=0):
                 yinitial yinitial
                 scrollbars "vertical"
                 mousewheel True
-                draggable True
+                draggable renpy.variant("touch")
                 pagekeys True
 
                 side_yfill True
@@ -434,7 +434,7 @@ screen game_menu(title, scroll=None, yinitial=0.0, spacing=0):
 
                 scrollbars "vertical"
                 mousewheel True
-                draggable True
+                draggable renpy.variant("touch")
                 pagekeys True
 
                 side_yfill True
@@ -524,21 +524,53 @@ screen about():
         style_prefix "about"
 
         vbox:
+            spacing 0
+            xsize 1000
 
-            label "[config.name!t]"
-            text _("Version [config.version!t]\n")
+            text "THE LIBRARY REREAD" style "dl_left_title" size 48
+            text _("Version [config.version!t]  ·  An unofficial fan restoration") style "about_small"
+            null height 34
 
-            ## gui.about is usually set in options.rpy.
-            if gui.about:
-                text "[gui.about!t]\n"
+            label _("What this is")
+            text _("In 2024, Deadlock's private playtest had a Library: interactive visual novels about the game's heroes, with fully voiced pages and branching chapters. Valve removed it from the game before most players ever saw it.\n\nThe Library Reread brings those books back as a standalone, playable game. The stories, chapter structure, choices and voice acting are Valve's own, recovered from old builds of the game. The interface was rebuilt to match the original as closely as possible.")
+            null height 28
+
+            label _("What's restored")
+            text _("• Four books: The Binding of Oathkeeper (Lady Geist), Infernus, Ivy and Holliday, 37 chapters in total\n• Every branch and choice, rebuilt from Valve's original chapter scripts\n• 738 of 740 voice lines (the last two were never recorded)\n• The original page art for Lady Geist's and Infernus's books, the only ones that were ever illustrated\n• Valve's Library, book and reader screens, rebuilt from the game's interface files")
+            null height 28
+
+            label _("What's missing")
+            text _("• Page art for Ivy's and Holliday's books. Valve never made any: both were built with voice and branching text first, and the Library was removed before illustrations were added. Their pages show each hero's in-game background as a backdrop instead.\n• The key system: in the playtest, chapters cost keys earned by playing matches. Here every chapter is free to read.\n• Some books were unfinished when the Library was removed, so a few pages have no voice or end abruptly.")
+            null height 28
+
+            label _("Thanks")
+            for parts in [
+                    [(_("Valve, for making the Library in the first place"), None)],
+                    [("Mr. Mindish", about_link_mindish), (_(", for preserving the original page art"), None)],
+                    [(_("The "), None), ("Deadlock Wiki", about_link_wiki), (_(" editors, whose transcripts provide the text"), None)],
+                    [(_("The makers of "), None), ("Source 2 Viewer", "https://valveresourceformat.github.io"),
+                     (_(" and "), None), ("DepotDownloader", "https://github.com/SteamRE/DepotDownloader")],
+                    [(_("Restored and rebuilt by "), None), ("Shobi-one", about_link_author)],
+                    ]:
+                hbox:
+                    text "• " style "about_text"
+                    for t, url in parts:
+                        if url:
+                            textbutton t style "about_link" action OpenURL(url) yalign 1.0
+                        else:
+                            text t style "about_text"
+            null height 28
+
+            label _("Legal")
+            text _("This is a non-commercial fan project. It is not affiliated with, endorsed by or sponsored by Valve Corporation. Deadlock and all related characters, art, writing and audio are the property of Valve Corporation. If you own Deadlock and enjoy these stories, support the official game.") style "about_small"
+            null height 20
 
             textbutton _("READ THE DISCLAIMER"):
                 style "dl_unlock_button"
                 action Show("dl_disclaimer", from_menu=True)
             null height 30
 
-            text _("Made with {a=https://www.renpy.org/}Ren'Py{/a} [renpy.version_only].\n\n[renpy.license!t]")
-
+            text _("Made with {a=https://www.renpy.org/}Ren'Py{/a} [renpy.version_only].\n\n[renpy.license!t]") style "about_small"
 
 style about_label is gui_label
 style about_label_text is gui_label_text
@@ -546,6 +578,24 @@ style about_text is gui_text
 
 style about_label_text:
     size gui.label_text_size
+
+style about_text:
+    size 22
+    color "#FFEFD7cc"
+    line_spacing 6
+
+style about_link is button:
+    padding (0, 0)
+    background None
+
+style about_link_text is about_text:
+    color "#7CBC1D"
+    hover_color "#FFEFD7"
+    hover_underline True
+
+style about_small is about_text:
+    size 18
+    color "#FFEFD780"
 
 
 ## Load and Save screens #######################################################
@@ -1125,36 +1175,51 @@ style help_label_text:
 
 screen confirm(message, yes_action, no_action):
 
-    ## Ensure other screens do not get input while this screen is displayed.
+    ## Deadlock-style modal (after the in-game "Player Feedback" dialog):
+    ## mottled dark panel, heavy title, body text, pill buttons, ESC CLOSE.
     modal True
-
     zorder 200
 
-    style_prefix "confirm"
+    $ msg = __(message)
+    $ title, sep, body = msg.partition("\n")
 
-    add "gui/overlay/confirm.png"
+    add Solid("#000000a6") at dl_fade(0.0, 0.15)
 
     frame:
-
+        style "dl_modal_frame"
+        at dl_popup_in()
         vbox:
-            xalign .5
-            yalign .5
-            spacing 45
-
-            label _(message):
-                style "confirm_prompt"
-                xalign 0.5
-
+            xalign 0.5
+            spacing 0
+            text title.upper() style "dl_modal_title"
+            if body:
+                null height 16
+                text body style "dl_modal_body"
+            null height 32
             hbox:
                 xalign 0.5
-                spacing 150
-
-                textbutton _("Yes") action yes_action
-                textbutton _("No") action no_action
+                spacing 22
+                textbutton dl_smallcaps(_("Yes")):
+                    style "dl_pill_primary"
+                    action yes_action
+                textbutton dl_smallcaps(_("No")):
+                    style "dl_pill_secondary"
+                    action no_action
+            null height 66
+            button:
+                style "dl_hint_button"
+                xalign 0.5
+                action no_action
+                hbox:
+                    spacing 8
+                    at dl_hint_fade
+                    frame:
+                        style "dl_modal_esc"
+                        text "ESC" style "dl_modal_esc_text" align (0.5, 0.5)
+                    text _("CLOSE") style "dl_modal_close" yalign 0.5
 
     ## Right-click and escape answer "no".
     key "game_menu" action no_action
-
 
 style confirm_frame is gui_frame
 style confirm_prompt is gui_prompt

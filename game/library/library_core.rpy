@@ -188,6 +188,8 @@ init -10 python:
         renpy.scene()
         store.quick_menu = False        # Valve's reader controls replace it
         renpy.show_screen("dl_reader")
+        # Valve marks a chapter's first page back="0": no "previous page" hint
+        store.vn_page_first = bool(intro)
         vn_page_art = renpy.loadable(path)
         if vn_page_art:
             renpy.show("vn_page", what=Solid("#000000", xysize=(w, h)))
@@ -197,8 +199,25 @@ init -10 python:
             return
         book = (bg or "").split("_")[0]
         bg_img = vn_art(VN_BG.get(bg)) or vn_art(VN_BG.get(book))
+        # temp page: the hero's background art from the game (Valve, git-ignored),
+        # else our generated texture
+        temp = "images/books/%s/page_bg.jpg" % book
+        if not renpy.loadable(temp):
+            temp = "gui/placeholder_%s.png" % book
         if bg_img:
             renpy.show("vn_bg", what=Transform(bg_img, fit="cover", xysize=(w, h)))
+        elif renpy.loadable(temp):
+            # temporary page for books whose art hasn't been recovered (our own
+            # generated texture, in the book's colour) inside Valve's viewer
+            label = Transform(Text(__("NO ARTWORK WAS MADE FOR THIS BOOK"), font=DL_SANS, size=18,
+                                   color="#FFEFD7", kerning=2),
+                              alpha=0.35, xpos=vx + 64, ypos=vy + 60)
+            renpy.show("vn_bg", what=Fixed(Solid("#000000"),
+                Transform(temp, xysize=(vw, vh), xpos=vx, ypos=vy,
+                          matrixcolor=BrightnessMatrix(-0.25) * SaturationMatrix(0.8)
+                          if temp.startswith("images/") else None),
+                label, xysize=(w, h)),
+                at_list=[dl_page_color_in] if intro else [])
         else:
             renpy.show("vn_bg", what=Fixed(Solid("#14110f"),
                 Solid("#c9a86a10", xysize=(w, int(h * 0.62)), yalign=1.0), xysize=(w, h)))
@@ -229,6 +248,7 @@ default persistent.vn_flags = set()
 ## Original pages have their dialogue drawn in, so our text box hides on them
 ## (lines still go to History). Players can turn it back on in Preferences.
 default vn_page_art = False
+default vn_page_first = False
 default persistent.vn_textbox_over_art = False
 
 transform vn_textbox_alpha(hidden):

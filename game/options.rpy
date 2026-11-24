@@ -25,6 +25,11 @@ define gui.show_name = True
 
 define config.version = "1.0"
 
+## Links on the About screen (leave "" to show plain text)
+define about_link_author  = "https://x.com/Shobi_one"                        # your X profile, e.g. https://x.com/<handle>
+define about_link_wiki    = "https://deadlock.wiki"   # Deadlock Wiki
+define about_link_mindish = "https://deadlock.wiki/User:Mr._Mindish"                        # Mr. Mindish's wiki user page
+
 
 ## Text that is placed on the game's about screen. Place the text between the
 ## triple-quotes, and leave a blank line between paragraphs.
