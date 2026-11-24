@@ -17,12 +17,13 @@ transform dl_page_color_in:
     ease 0.4 alpha 1.0
     ease 0.4 matrixcolor SaturationMatrix(1.0)
 
-# choice card artwork: brightness 0.2 -> 1 on hover
-transform dl_choice_art:
+# choice card #Icon: brightness 0.2, 1 on hover (instant in Valve's CSS);
+# not-yet-unlocked chapters are also desaturated
+transform dl_choice_art(grey=False):
     on idle:
-        ease 0.18 matrixcolor TintMatrix("#333333")
+        matrixcolor TintMatrix("#333333") * SaturationMatrix(0.0 if grey else 1.0)
     on hover:
-        ease 0.18 matrixcolor TintMatrix("#ffffff")
+        matrixcolor TintMatrix("#ffffff") * SaturationMatrix(0.0 if grey else 1.0)
 
 ## ------------------------------------------------------------------
 ## Helpers
@@ -32,6 +33,30 @@ init python:
 
     def dl_choice_showing():
         return renpy.get_screen("choice") is not None
+
+    def dl_choice_nav():
+        """The 'back to chapter select' action of the current chapter-end
+        menu, if any (Valve has no button for it: ESC does that)."""
+        scr = renpy.get_screen("choice")
+        if scr is None:
+            return None
+        for i in scr.scope.get("items", []):
+            if i.kwargs.get("kind") == "nav":
+                return i.action
+        return None
+
+    def dl_choice_state(i):
+        """unlocked / unlockable / unreachable for a chapter-end choice,
+        mirroring Valve's IsUnlockable / Unlocked / NotReachable classes."""
+        cid = i.kwargs.get("chapter")
+        bid = getattr(store, "lib_book_id", None)
+        if not cid or not bid:
+            return "unlocked"
+        try:
+            book = vn_book(bid)
+            return dl_node_state(book, book.chapter(cid))
+        except Exception:
+            return "unlocked"
 
 ## ------------------------------------------------------------------
 ## Leaving a chapter halfway (table of contents button)
@@ -124,8 +149,9 @@ screen dl_reader():
 
     $ choosing = dl_choice_showing()
     $ auto = _preferences.afm_enable
-    $ leave = Confirm(_("Return to the chapter select?\nThis chapter will not be marked as finished."),
-                      Jump("vn_leave_chapter"))
+    $ nav = dl_choice_nav()
+    $ leave = nav or Confirm(_("Return to the chapter select?\nThis chapter will not be marked as finished."),
+                             Jump("vn_leave_chapter"))
 
     use dl_keyhint(18, "ESC", _("BACK"), leave)
     key "K_ESCAPE" action leave
@@ -141,37 +167,40 @@ screen dl_reader():
         key "K_SPACE" action Preference("auto-forward", "toggle")
 
 ## ------------------------------------------------------------------
-## Choices: Valve's 400x240 image cards over the right of the page
+## Choices, from citadel_ui_book_viewer + citadel_ui_book_nav_button_choice:
+##   .PageChoiceListContainer  margins 450 left, 200 top, 50 right/bottom
+##   #PageChoiceList           centred, flow right-wrap
+##   #NavButton                400x240, 1px border, margin 30
+##   #Icon                     page art, brightness 0.2 (1 on hover)
+##   .Prompt                   28px bold, centred, text-shadow 1px 1px 3px
+##   states: unlocked = white border; unlockable = yellow border, grey art,
+##   lock icon bottom-right; unreachable = #444 bg, red border
+##   The lock is red when the player can't afford it and white (.CanAfford)
+##   when they can. There is no key economy in this restoration, so the
+##   player can always afford it: white lock.
+## Valve has no "back to chapter select" button: ESC does that, so the
+## nav item from the converter is wired to ESC instead of drawn.
 ## ------------------------------------------------------------------
 
-style dl_choice_prompt is dl_text:
-    font DL_BOLD
+define DL_CHOICE_BORDER = {"unlocked": "#ffffff", "unlockable": "#ffff00", "unreachable": "#ff0000"}
+
+# font + colour confirmed from an in-game capture: Valve's "sans" in offWhite
+style dl_choice_prompt is default:
+    font DL_SANS
     size 28
+    color "#FFEFD7"
     text_align 0.5
     xalign 0.5
     yalign 0.5
-    xmaximum 360
-    outlines [(0, "#000000", 1, 1)]
-
-style dl_navtext_button is button:
-    background Frame("gui/dl_navbtn.png", 0, 0)
-    hover_background Frame("gui/dl_navbtn_hover.png", 0, 0)
-    padding (20, 10)
-
-style dl_navtext_button_text is dl_text:
-    font DL_BODY
-    size 32
-    idle_color "#FFEFD7cc"
-    hover_color "#FFEFD7"
+    xmaximum 380
+    outlines [(3, "#00000066", 1, 1), (1, "#000000cc", 1, 1)]
 
 screen choice(items):
     style_prefix "choice"
 
     $ vx, vy, vw, vh = DL_VIEWER
     $ cards = [i for i in items if i.kwargs.get("kind") != "nav"]
-    $ navs = [i for i in items if i.kwargs.get("kind") == "nav"]
 
-    # Valve: list area = viewer minus margins 450 left, 200 top, 50 right/bottom
     fixed:
         pos (vx + 450, vy + 200)
         xysize (vw - 500, vh - 250)
@@ -184,29 +213,18 @@ screen choice(items):
 
             for n, i in enumerate(cards):
                 $ thumb = i.kwargs.get("thumb", "")
+                $ state = dl_choice_state(i)
                 button:
                     xysize (402, 242)
                     padding (1, 1)
-                    background Solid("#ffffff")
-                    hover_background Solid("#ffffff")
+                    background Solid(DL_CHOICE_BORDER[state])
                     action i.action
                     at dl_fade_up(0.05 + 0.08 * n)
                     fixed:
                         xysize (400, 240)
-                        add Solid("#000000")
-                        if thumb and renpy.loadable(thumb):
-                            add dl_thumb(thumb, (400, 240)) at dl_choice_art
-                        else:
-                            add Solid("#16181c")
+                        add Solid("#444444" if state == "unreachable" else "#000000")
+                        if thumb and renpy.loadable(thumb) and state != "unreachable":
+                            add dl_thumb(thumb, (400, 240)) at dl_choice_art(state == "unlockable")
                         text i.caption style "dl_choice_prompt"
-
-    # text-style nav buttons (e.g. back to chapter select), under the page
-    if navs:
-        hbox:
-            xalign 0.5
-            ypos vy + vh + 14
-            spacing 20
-            for i in navs:
-                textbutton i.caption:
-                    style "dl_navtext_button"
-                    action i.action
+                        if state != "unlocked" and dl_ui("lock"):
+                            add dl_ui("lock") xysize (20, 20) align (1.0, 1.0) offset (-10, -10)

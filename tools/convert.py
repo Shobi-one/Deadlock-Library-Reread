@@ -287,7 +287,7 @@ class BookConverter(object):
             if kids:
                 out.append("    menu:")
                 for prompt, child in kids:
-                    out.append("        %s (thumb=%s):" % (rpy_str(prompt), rpy_str(self.chapter_thumb.get(child, ""))))
+                    out.append("        %s (thumb=%s, chapter=%s):" % (rpy_str(prompt), rpy_str(self.chapter_thumb.get(child, "")), rpy_str(child)))
                     out.append("            jump %s" % self.label(child))
                 out.append('        "Back to chapter select" (kind="nav"):')
                 out.append("            return")
