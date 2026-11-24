@@ -23,7 +23,7 @@ init -10 python:
                   that must also be set, so a choice decides which branch opens
         """
 
-        def __init__(self, id, title, label, requires=None, any_of=False, hidden=False, flag=None, desc=""):
+        def __init__(self, id, title, label, requires=None, any_of=False, hidden=False, flag=None, desc="", thumb="", parent=None):
             self.id = id
             self.title = title
             self.label = label
@@ -32,6 +32,8 @@ init -10 python:
             self.hidden = hidden
             self.flag = flag
             self.desc = desc
+            self.thumb = thumb
+            self.parent = parent
 
 
     class VNBook(object):
@@ -66,9 +68,17 @@ init -10 python:
             done = len([c for c in self.chapters if vn_is_complete(self.id, c.id)])
             return done, len(self.chapters)
 
-        def cover(self):
+        def cover(self, size=(360, 540)):
             return vn_img("images/books/%s/cover.png" % self.id,
-                          self.accent, self.title, (360, 540))
+                          self.accent, self.title, size)
+
+        def logo(self):
+            path = "images/books/%s/logo.png" % self.id
+            return path if renpy.loadable(path) else None
+
+        def toc_background(self):
+            path = "images/books/%s/toc_bg.png" % self.id
+            return path if renpy.loadable(path) else None
 
 
     ## Book registry. Filled by game/generated/vn_books.rpy (init -1) when the
@@ -84,6 +94,21 @@ init -10 python:
             if b.id == book_id:
                 return b
         raise KeyError("Unknown book %r" % book_id)
+
+    ## ---- UI strings ----
+    ## Valve's own wording is extracted by tools/convert.py into the git-ignored
+    ## game/generated/vn_strings.rpy (init -1); these are neutral fallbacks.
+    VN_STR_DEFAULTS = {
+        "library_title": "The Library",
+        "library_desc": "Stories from the world of Deadlock, recovered from the game's removed Library.",
+        "library_future_label": "About this port",
+        "library_future_desc": "An unofficial fan preservation of Valve's unreleased visual novels, rebuilt in Ren'Py.",
+        "library_available": "Available Books",
+    }
+    VN_STR = {}
+
+    def vn_str(key):
+        return VN_STR.get(key) or VN_STR_DEFAULTS.get(key, key)
 
     ## ---- Progress (persistent: survives across saves and restarts) ----
 
@@ -104,6 +129,13 @@ init -10 python:
     def vn_flag(name):
         """Remember a choice across the whole Library, e.g. vn_flag("geist_path_a")."""
         persistent.vn_flags.add(name)
+
+    def vn_unlock_all(book_id):
+        """Open every chapter of a book (sets each chapter's 'reached' flag)."""
+        for c in vn_book(book_id).chapters:
+            if c.flag:
+                persistent.vn_flags.add(c.flag)
+        renpy.restart_interaction()
 
     def vn_has_flag(name):
         return name in persistent.vn_flags

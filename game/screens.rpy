@@ -293,10 +293,7 @@ screen navigation():
     vbox:
         style_prefix "navigation"
 
-        xpos gui.navigation_xpos
-        yalign 0.5
-
-        spacing gui.navigation_spacing
+        spacing 6
 
         if main_menu:
 
@@ -356,26 +353,8 @@ screen main_menu():
     ## This ensures that any other menu screen is replaced.
     tag menu
 
-    add gui.main_menu_background
-
-    ## This empty frame darkens the main menu.
-    frame:
-        style "main_menu_frame"
-
-    ## The use statement includes another screen inside this one. The actual
-    ## contents of the main menu are in the navigation screen.
-    use navigation
-
-    if gui.show_name:
-
-        vbox:
-            style "main_menu_vbox"
-
-            text "[config.name!t]":
-                style "main_menu_title"
-
-            text "[config.version]":
-                style "main_menu_version"
+    ## Deadlock-style main menu (game/library/main_menu.rpy).
+    use dl_main_menu
 
 
 style main_menu_frame is empty
@@ -420,68 +399,59 @@ screen game_menu(title, scroll=None, yinitial=0.0, spacing=0):
 
     style_prefix "game_menu"
 
-    if main_menu:
-        add gui.main_menu_background
-    else:
-        add gui.game_menu_background
+    ## Deadlock-style backdrop (see game/library/dl_menus.rpy for the styles).
+    add Solid("#000000")
+    if dl_ui("library_bg"):
+        add Transform(dl_ui("library_bg"), fit="cover", xysize=(1920, 1080), alpha=0.2)
+
+    vbox:
+        xpos 60 ypos 80
+        xsize 500
+        text title style "dl_left_title"
+        null height 50
+        use navigation
 
     frame:
-        style "game_menu_outer_frame"
+        style "game_menu_content_frame"
 
-        hbox:
+        if scroll == "viewport":
 
-            ## Reserve space for the navigation section.
-            frame:
-                style "game_menu_navigation_frame"
+            viewport:
+                yinitial yinitial
+                scrollbars "vertical"
+                mousewheel True
+                draggable True
+                pagekeys True
 
-            frame:
-                style "game_menu_content_frame"
+                side_yfill True
 
-                if scroll == "viewport":
-
-                    viewport:
-                        yinitial yinitial
-                        scrollbars "vertical"
-                        mousewheel True
-                        draggable True
-                        pagekeys True
-
-                        side_yfill True
-
-                        vbox:
-                            spacing spacing
-
-                            transclude
-
-                elif scroll == "vpgrid":
-
-                    vpgrid:
-                        cols 1
-                        yinitial yinitial
-
-                        scrollbars "vertical"
-                        mousewheel True
-                        draggable True
-                        pagekeys True
-
-                        side_yfill True
-
-                        spacing spacing
-
-                        transclude
-
-                else:
+                vbox:
+                    spacing spacing
 
                     transclude
 
-    use navigation
+        elif scroll == "vpgrid":
 
-    textbutton _("Return"):
-        style "return_button"
+            vpgrid:
+                cols 1
+                yinitial yinitial
 
-        action Return()
+                scrollbars "vertical"
+                mousewheel True
+                draggable True
+                pagekeys True
 
-    label title
+                side_yfill True
+
+                spacing spacing
+
+                transclude
+
+        else:
+
+            transclude
+
+    use dl_back(Return())
 
     if main_menu:
         key "game_menu" action ShowMenu("main_menu")
@@ -565,6 +535,11 @@ screen about():
             ## gui.about is usually set in options.rpy.
             if gui.about:
                 text "[gui.about!t]\n"
+
+            textbutton _("READ THE DISCLAIMER"):
+                style "dl_unlock_button"
+                action ShowMenu("dl_disclaimer")
+            null height 30
 
             text _("Made with {a=https://www.renpy.org/}Ren'Py{/a} [renpy.version_only].\n\n[renpy.license!t]")
 
