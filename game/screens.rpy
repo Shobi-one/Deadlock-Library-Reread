@@ -575,6 +575,7 @@ screen about():
             for parts in [
                     [(_("Valve, for making the Library in the first place"), None)],
                     [("Mr. Mindish", about_link_mindish), (_(", for preserving the original page art"), None)],
+        [("Gammaton32", about_link_gammatron), (_(", for sharing the May 2024 build (Dynamo's full line, Valve's original reader)"), None)],
                     [(_("The "), None), ("Deadlock Wiki", about_link_wiki), (_(" editors, whose transcripts provide the text"), None)],
                     [(_("The makers of "), None), ("Source 2 Viewer", "https://valveresourceformat.github.io"),
                      (_(" and "), None), ("DepotDownloader", "https://github.com/SteamRE/DepotDownloader")],
@@ -1203,8 +1204,9 @@ style help_label_text:
 
 screen confirm(message, yes_action, no_action):
 
-    ## Deadlock-style modal (after the in-game "Player Feedback" dialog):
-    ## mottled dark panel, heavy title, body text, pill buttons, ESC CLOSE.
+    ## Valve's generic popup from the May 2024 build (see library/dl_modal.rpy):
+    ## smoky panel with grey top/bottom rules, serif title, outlined pills.
+    ## First line of the message is the title, the rest the body.
     modal True
     zorder 200
 
@@ -1219,32 +1221,20 @@ screen confirm(message, yes_action, no_action):
         vbox:
             xalign 0.5
             spacing 0
-            text title.upper() style "dl_modal_title"
+            text title style "dl_modal_title"
             if body:
-                null height 16
+                null height 10
                 text body style "dl_modal_body"
-            null height 32
+            null height 20
             hbox:
                 xalign 0.5
-                spacing 22
-                textbutton dl_smallcaps(_("Yes")):
-                    style "dl_pill_primary"
+                spacing 16                  # 8px margin each side
+                textbutton _("Yes"):
+                    style "dl_popup_button"
                     action yes_action
-                textbutton dl_smallcaps(_("No")):
-                    style "dl_pill_secondary"
+                textbutton _("No"):
+                    style "dl_popup_button"
                     action no_action
-            null height 66
-            button:
-                style "dl_hint_button"
-                xalign 0.5
-                action no_action
-                hbox:
-                    spacing 8
-                    at dl_hint_fade
-                    frame:
-                        style "dl_modal_esc"
-                        text "ESC" style "dl_modal_esc_text" align (0.5, 0.5)
-                    text _("CLOSE") style "dl_modal_close" yalign 0.5
 
     ## Right-click and escape answer "no".
     key "game_menu" action no_action

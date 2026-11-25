@@ -79,23 +79,28 @@ label vn_leave_chapter:
 ## while the Library was a live feature (scaled to 1920x1080):
 ##   [ESC] Back (x 52)          [->] Next (x 891)          [Space] Play (x 1716)
 ## - caps #53504F, near-square; ESC/Space 31px tall, the Next cap 53x35 with a
-##   white arrow; cap text Radiance Bold 17 in offWhite
-## - labels Radiance SemiBold 17, offWhite, 12px after the cap, title case
+##   white arrow; cap text Retail Demo Bold 18 in offWhite
+## - labels Retail Demo 18, offWhite, 12px after the cap, title case
 ## - centre: [->] Next alone on a chapter's first page (x 891); otherwise the
 ##   pair [<-] Back (817) + [->] Next (963); at a choice only [<-] Back (891)
 
-define DL_HINT_FONT     = ("fonts/radiance-semibold.otf" if renpy.loadable("fonts/radiance-semibold.otf")
+## Fonts from the May 2024 build's own style sheets: base.css sets the root
+## font to "Retail Demo"; Label = 18px; .controlKeyBind = bold, padding
+## 10px left/right + 2px top, min 32x32 (citadel_db_page_shared.css).
+define DL_HINT_FONT     = ("fonts/retaildemo-regular.otf" if renpy.loadable("fonts/retaildemo-regular.otf")
                            else "gui/fonts/LiberationSans-Bold.ttf")
-define DL_HINT_CAP_FONT = ("fonts/radiance-bold.otf" if renpy.loadable("fonts/radiance-bold.otf")
+define DL_HINT_CAP_FONT = ("fonts/retaildemo-bold.otf" if renpy.loadable("fonts/retaildemo-bold.otf")
                            else "gui/fonts/LiberationSans-Bold.ttf")
 define DL_CAP_COLOR = "#53504F"
 
-# hover: a slight brighten (footer CSS: brightness 1.3 over 0.1s)
+# hover, from the May 2024 build (citadel_db_page_shared.css,
+# #FooterBar .FooterCommand:hover): brightness 1.3 + translateY(-2px),
+# 0.1s ease
 transform dl_hint_fade:
     on idle:
-        ease 0.1 matrixcolor BrightnessMatrix(0.0)
+        ease 0.1 matrixcolor BrightnessMatrix(0.0) yoffset 0
     on hover:
-        ease 0.1 matrixcolor BrightnessMatrix(0.12)
+        ease 0.1 matrixcolor BrightnessMatrix(0.12) yoffset -2
 
 style dl_hint_button is button:
     background None
@@ -103,17 +108,17 @@ style dl_hint_button is button:
 
 style dl_hint_label is default:
     font DL_HINT_FONT
-    size 17
+    size 18
     color "#FFEFD7"
 
 style dl_hint_cap is default:
     font DL_HINT_CAP_FONT
-    size 17
+    size 18
     color "#FFEFD7"
 
 style dl_hint_capframe is frame:
     background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix(DL_CAP_COLOR)), 2, 2)
-    ysize 31
+    ysize 32
     yalign 0.5
 
 screen dl_keyhint(x, cap, label, act):
@@ -127,13 +132,13 @@ screen dl_keyhint(x, cap, label, act):
             if cap in ("left", "right"):
                 frame:
                     style "dl_hint_capframe"
-                    xysize (53, 35)
+                    xysize (53, 36)
                     padding (0, 0)
                     add ("gui/dl_arrow_%s.png" % cap) align (0.5, 0.5)
             else:
                 frame:
                     style "dl_hint_capframe"
-                    padding (11, 0)
+                    padding (10, 2, 10, 0)            # .controlKeyBind padding
                     text cap style "dl_hint_cap" align (0.5, 0.5)
             text label style "dl_hint_label" yalign 0.5
 
@@ -146,7 +151,7 @@ screen dl_reader():
     $ leave = nav or Confirm(_("Return to the chapter select?\nThis chapter will not be marked as finished."),
                              Jump("vn_leave_chapter"))
 
-    use dl_keyhint(52, "ESC", vn_str("reader_prev"), leave)
+    use dl_keyhint(52, "ESC", vn_str("reader_prev"), leave)     # footer padding 50 + margin 2
     key "K_ESCAPE" action leave
 
     # Centre group (Valve, May 2024): a lone hint sits at x 891; when both
