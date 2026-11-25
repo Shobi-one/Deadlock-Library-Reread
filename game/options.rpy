@@ -12,7 +12,7 @@
 ##
 ## The _() surrounding the string marks it as eligible for translation.
 
-define config.name = _("DeadlockLibrary")
+define config.name = _("The Library Reread")
 
 
 ## Determines if the title given above is shown on the main menu screen. Set
@@ -42,7 +42,7 @@ define gui.about = _p("""
 ## distribution. This must be ASCII-only, and must not contain spaces, colons,
 ## or semicolons.
 
-define build.name = "DeadlockLibrary"
+define build.name = "TheLibraryReread"
 
 
 ## Sounds and music ############################################################
@@ -155,7 +155,8 @@ define config.save_directory = "DeadlockLibrary-1795443639"
 ##
 ## The icon displayed on the taskbar or dock.
 
-define config.window_icon = "gui/window_icon.png"
+## Valve's Library book icon if present (git-ignored), else our own
+define config.window_icon = ("images/ui/window_icon.png" if renpy.loadable("images/ui/window_icon.png") else "gui/window_icon.png")
 
 
 ## Build configuration #########################################################
@@ -212,3 +213,10 @@ init python:
 ## by a slash.
 
 # define build.itch_project = "renpytom/test-project"
+
+
+## Ren'Py's "hide windows" key (H / middle mouse) hides every screen, which
+## on the Library shelf, chapter tree and reader just leaves a black screen
+## (Valve's Library has no such key). Turn it off everywhere.
+init python:
+    config.keymap["hide_windows"] = []

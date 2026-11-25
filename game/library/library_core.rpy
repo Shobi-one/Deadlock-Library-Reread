@@ -212,7 +212,8 @@ init -10 python:
             label = Transform(Text(__("NO ARTWORK WAS MADE FOR THIS BOOK"), font=DL_SANS, size=18,
                                    color="#FFEFD7", kerning=2),
                               alpha=0.35, xpos=vx + 64, ypos=vy + 60)
-            renpy.show("vn_bg", what=Fixed(Solid("#000000"),
+            renpy.show("vn_page", what=Solid("#000000", xysize=(w, h)))   # opaque base: no dev-mode checkerboard while fading
+            renpy.show("vn_bg", what=Fixed(
                 Transform(temp, xysize=(vw, vh), xpos=vx, ypos=vy,
                           matrixcolor=BrightnessMatrix(-0.25) * SaturationMatrix(0.8)
                           if temp.startswith("images/") else None),
@@ -230,9 +231,24 @@ init -10 python:
         """True on pages whose original art already contains the dialogue."""
         return vn_page_art and not persistent.vn_textbox_over_art
 
+    VN_NO_TRANSCRIPT = "{i}{color=#FFEFD766}No transcript for this line.{/color}{/i}"
+
     def vn_wait():
-        """Wait for a click on pages that have no transcript text yet."""
-        renpy.pause()
+        """A page with no transcript text. Over real page art the art is the
+        content, so just wait; on artless books, say so instead of showing an
+        empty screen that needs an unexplained click."""
+        if store.vn_page_art:
+            renpy.pause()
+        else:
+            renpy.say(None, __(VN_NO_TRANSCRIPT))
+
+    def vn_text_filter(s):
+        """Lines that are only an ellipsis are gaps in the wiki transcript."""
+        if s.strip() in ("...", "\u2026", "(...)", "[...]", "{...}", "(\u2026)"):
+            return __(VN_NO_TRANSCRIPT)
+        return s
+
+    config.say_menu_text_filter = vn_text_filter
 
     def vn_sprite(path, color, name):
         return vn_img(path, color, name, (500, 900))

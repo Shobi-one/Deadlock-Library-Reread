@@ -26,7 +26,9 @@ label book_loop:
 
     window hide
     scene black with dissolve
+    $ vn_skip_declined = set()
     call expression lib_label from lib_call_chapter
+    $ vn_stop_skip()
     hide screen dl_reader
     $ vn_page_art = False
     $ quick_menu = False

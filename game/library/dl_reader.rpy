@@ -63,6 +63,7 @@ init python:
 ## ------------------------------------------------------------------
 
 label vn_leave_chapter:
+    $ vn_stop_skip()
     hide screen dl_reader
     $ vn_page_art = False
     $ quick_menu = False
@@ -74,35 +75,27 @@ label vn_leave_chapter:
 ## Reader overlay: shown while a chapter is playing
 ## ------------------------------------------------------------------
 
-## Valve's reader has no on-screen arrows: just keyboard hints along the
-## bottom (from an in-game capture of citadel_book_open):
-##   [ESC] BACK      [<] BACK      [SPACE] PLAY      [>] NEXT
-## Positions below are that capture scaled to 1920x1080.
+## Rebuilt 1:1 from Valve's reader running in the 25 May 2024 build (4,192),
+## while the Library was a live feature (scaled to 1920x1080):
+##   [ESC] Back (x 52)          [->] Next (x 891)          [Space] Play (x 1716)
+## - caps #53504F, near-square; ESC/Space 31px tall, the Next cap 53x35 with a
+##   white arrow; cap text Radiance Bold 17 in offWhite
+## - labels Radiance SemiBold 17, offWhite, 12px after the cap, title case
+## - centre: [->] Next alone on a chapter's first page (x 891); otherwise the
+##   pair [<-] Back (817) + [->] Next (963); at a choice only [<-] Back (891)
 
-## Colours / sizes measured from an in-game capture of Valve's reader
-## (scaled to 1080p): caps 24px tall, labels ~19px, everything cream at
-## ~35% (hover x1.3 and 2px lift, from citadel_dashboard_footer_bar).
-## Fonts: Valve's CSS asks for Radiance (base.css), but the live game draws
-## this footer in a bold Arial-style grotesque (side-by-side captures). We
-## match what's on screen: Liberation Sans Bold (SIL OFL, Arial metrics),
-## sized from the capture (BACK 56px wide, ESC cap 44px, SPACE cap 64px).
-## The game's text is heavier than Arial Bold (the engine emboldens it again),
-## so both styles also set bold True for Ren'Py's synthetic bold.
-define DL_HINT_FONT = "gui/fonts/LiberationSans-Bold.ttf"
-define DL_HINT_CAP_FONT = "gui/fonts/LiberationSans-Bold.ttf"
+define DL_HINT_FONT     = ("fonts/radiance-semibold.otf" if renpy.loadable("fonts/radiance-semibold.otf")
+                           else "gui/fonts/LiberationSans-Bold.ttf")
+define DL_HINT_CAP_FONT = ("fonts/radiance-bold.otf" if renpy.loadable("fonts/radiance-bold.otf")
+                           else "gui/fonts/LiberationSans-Bold.ttf")
+define DL_CAP_COLOR = "#53504F"
 
-define DL_HINT_IDLE  = "#5C564D"
-define DL_HINT_HOVER = "#787064"
-define DL_CAP_IDLE   = "#524D46"
-define DL_CAP_HOVER  = "#6B645B"
-
-# hover: colour fades lighter (no movement). Everything is drawn in the
-# hover colours and dimmed to the idle ones (#5C564D / #787064 = 0.77).
+# hover: a slight brighten (footer CSS: brightness 1.3 over 0.1s)
 transform dl_hint_fade:
     on idle:
-        ease 0.15 matrixcolor TintMatrix("#c4c4c4")
+        ease 0.1 matrixcolor BrightnessMatrix(0.0)
     on hover:
-        ease 0.15 matrixcolor TintMatrix("#ffffff")
+        ease 0.1 matrixcolor BrightnessMatrix(0.12)
 
 style dl_hint_button is button:
     background None
@@ -110,51 +103,37 @@ style dl_hint_button is button:
 
 style dl_hint_label is default:
     font DL_HINT_FONT
-    size 20
-    bold True          # Panorama draws bold-on-bold: synthetic emboldening
-    color DL_HINT_HOVER
-    selected_idle_color DL_HINT_HOVER
-    selected_hover_color DL_HINT_HOVER
+    size 17
+    color "#FFEFD7"
 
 style dl_hint_cap is default:
     font DL_HINT_CAP_FONT
-    size 13
-    bold True
-    color "#040503"
+    size 17
+    color "#FFEFD7"
 
 style dl_hint_capframe is frame:
-    idle_background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix(DL_CAP_HOVER)), 4, 4)
-    hover_background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix(DL_CAP_HOVER)), 4, 4)
-    selected_idle_background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix(DL_CAP_HOVER)), 4, 4)
-    ysize 25
+    background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix(DL_CAP_COLOR)), 2, 2)
+    ysize 31
     yalign 0.5
 
 screen dl_keyhint(x, cap, label, act):
     button:
         style "dl_hint_button"
-        pos (x, 1050)
-        yanchor 0.5
+        pos (x, 1012)
         action act
         hbox:
-            spacing 6
+            spacing 12
             at dl_hint_fade
             if cap in ("left", "right"):
                 frame:
                     style "dl_hint_capframe"
+                    xysize (53, 35)
                     padding (0, 0)
-                    xsize 25
-                    # Valve's glyph (panorama/images/glyphs/keyboard_arrow_*), white
-                    # on a 148px canvas: shown full-cap and tinted to the key text
-                    # colour. Falls back to our own triangle if not extracted.
-                    $ glyph = dl_ui("glyph_arrow_" + cap)
-                    if glyph:
-                        add Transform(glyph, xysize=(24, 24), matrixcolor=TintMatrix("#040503")) align (0.5, 0.5)
-                    else:
-                        add ("gui/dl_tri_left.png" if cap == "left" else "gui/dl_tri_right.png") align (0.5, 0.5)
+                    add ("gui/dl_arrow_%s.png" % cap) align (0.5, 0.5)
             else:
                 frame:
                     style "dl_hint_capframe"
-                    padding (8, 0)
+                    padding (11, 0)
                     text cap style "dl_hint_cap" align (0.5, 0.5)
             text label style "dl_hint_label" yalign 0.5
 
@@ -167,18 +146,24 @@ screen dl_reader():
     $ leave = nav or Confirm(_("Return to the chapter select?\nThis chapter will not be marked as finished."),
                              Jump("vn_leave_chapter"))
 
-    use dl_keyhint(18, "ESC", vn_str("reader_prev").upper(), leave)
+    use dl_keyhint(52, "ESC", vn_str("reader_prev"), leave)
     key "K_ESCAPE" action leave
 
-    # Valve: no previous-page hint on a chapter's first page (back="0");
-    # while choices are up, only BACK stays (play / next are hidden)
-    if not vn_page_first:
-        use dl_keyhint(540, "left", vn_str("reader_prev").upper(), Rollback())
-        key "K_LEFT" action Rollback()
-
-    if not choosing:
-        use dl_keyhint(900, "SPACE", (vn_str("reader_pause") if auto else vn_str("reader_play")).upper(), Preference("auto-forward", "toggle"))
-        use dl_keyhint(1296, "right", vn_str("reader_next").upper(), Return(True))
+    # Centre group (Valve, May 2024): a lone hint sits at x 891; when both
+    # are shown, [<-] Back at 817 and [->] Next at 963 (centred pair).
+    # First page of a chapter: no Back. At a choice: Back only, no Play.
+    if choosing:
+        if not vn_page_first:
+            use dl_keyhint(891, "left", vn_str("reader_prev"), Rollback())
+            key "K_LEFT" action Rollback()
+    else:
+        if vn_page_first:
+            use dl_keyhint(891, "right", vn_str("reader_next"), Return(True))
+        else:
+            use dl_keyhint(817, "left", vn_str("reader_prev"), Rollback())
+            use dl_keyhint(963, "right", vn_str("reader_next"), Return(True))
+            key "K_LEFT" action Rollback()
+        use dl_keyhint(1716, "Space", (vn_str("reader_pause") if auto else vn_str("reader_play")), Preference("auto-forward", "toggle"))
 
         key "K_RIGHT" action Return(True)
         key "K_SPACE" action Preference("auto-forward", "toggle")
@@ -214,6 +199,7 @@ style dl_choice_prompt is default:
 
 screen choice(items):
     style_prefix "choice"
+    on "show" action Function(vn_stop_skip)      # skipped to the chapter's end
 
     $ vx, vy, vw, vh = DL_VIEWER
     $ cards = [i for i in items if i.kwargs.get("kind") != "nav"]
@@ -235,7 +221,8 @@ screen choice(items):
                     xysize (402, 242)
                     padding (1, 1)
                     background Solid(DL_CHOICE_BORDER[state])
-                    action i.action
+                    # a branch locked by an earlier choice can't be picked
+                    action (NullAction() if state == "unreachable" else i.action)
                     at dl_fade_up(0.05 + 0.08 * n)
                     fixed:
                         xysize (400, 240)
@@ -245,3 +232,26 @@ screen choice(items):
                         text i.caption style "dl_choice_prompt"
                         if state != "unlocked" and dl_ui("lock"):
                             add dl_ui("lock") xysize (20, 20) align (1.0, 1.0) offset (-10, -10)
+
+## ------------------------------------------------------------------
+## Centred text for books without page art (screens.rpy -> screen say)
+## ------------------------------------------------------------------
+
+style vn_center_frame is frame:
+    background Solid("#0a0a09c8")
+    xalign 0.5
+    yalign 0.44
+    xsize 1300
+    ymaximum 820
+    padding (70, 44, 70, 48)
+
+style vn_center_who is default:
+    font DL_SERIF
+    size 40
+    color "#7CBC1D"
+
+style vn_center_what is default:
+    font DL_BODY
+    color "#FFEFD7"
+    line_spacing 6
+

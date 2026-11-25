@@ -3,7 +3,7 @@
 ## Add expressions as new image lines, e.g.
 ##     image geist angry = vn_sprite("images/books/geist/geist_angry.png", "#2f5d50", "Lady Geist (angry)")
 
-define narrator = Character(None, what_italic=False)
+## narrator: see library/vn_narration.rpy
 
 define geist    = Character("Lady Geist", color="#7fc4a8")
 define infernus = Character("Infernus",   color="#e0704f")
@@ -28,3 +28,12 @@ define fairfax    = Character("Fairfax",    color="#a3a3a3")
 define bebop      = Character("Bebop",      color="#e8794a")
 define hank       = Character("Hank",       color="#c9a86a")
 define shelly     = Character("Ms. Shelly", color="#d4a5c9")
+
+## Speakers that the converted scripts name with a plain string ("Wraith" "...")
+## rather than a Character: their name colour is applied in screen say.
+define VN_NAME_COLORS = {
+    "Wraith": "#954E7A",
+    "Lash":   "#444C57",
+}
+define wraith = Character("Wraith", color="#954E7A")
+define lash   = Character("Lash",   color="#444C57")

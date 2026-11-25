@@ -97,18 +97,46 @@ style frame:
 
 screen say(who, what):
 
-    window:
-        id "window"
-        at vn_textbox_alpha(vn_hide_textbox())
+    ## Books without page art (Ivy, Holliday): the text is the only content,
+    ## so show it centred over the page instead of in the bottom text box,
+    ## shrinking long passages (songs) so they never get cut off.
+    if not vn_page_art and renpy.get_screen("dl_reader"):
+        $ n = len(what)
+        frame:
+            style "vn_center_frame"
+            vbox:
+                spacing 18
+                xfill True
+                # the Character's who/what styles (say_label / say_dialogue)
+                # carry bottom-textbox positions: reset them here
+                if who is not None and who in VN_NAME_COLORS:
+                    text who id "who" style "vn_center_who":
+                        xalign 0.5 yalign 0.0
+                        color VN_NAME_COLORS[who]
+                elif who is not None:
+                    text who id "who" style "vn_center_who":
+                        xalign 0.5 yalign 0.0
+                text what id "what" style "vn_center_what":
+                    xalign 0.5 yalign 0.0
+                    xsize 1160
+                    text_align (0.5 if n < 220 else 0.0)
+                    size (34 if n < 220 else 28 if n < 420 else 24 if n < 700 else 20)
+    else:
+      window:
+          id "window"
+          at vn_textbox_alpha(vn_hide_textbox())
 
-        if who is not None:
+          if who is not None:
 
-            window:
-                id "namebox"
-                style "namebox"
-                text who id "who"
+              window:
+                  id "namebox"
+                  style "namebox"
+                  if who in VN_NAME_COLORS:
+                      text who id "who" color VN_NAME_COLORS[who]
+                  else:
+                      text who id "who"
 
-        text what id "what"
+          text what id "what"
 
 
     ## If there's a side image, display it above the text. Do not display on the

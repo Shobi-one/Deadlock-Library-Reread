@@ -74,10 +74,28 @@ init -1 python:
         pos = dict((cid, (int(x0 + depth[cid] * dx), int(y0 + rows[cid] * dy))) for cid in rows)
         return pos, kids
 
+    def dl_branch_finished(book, c):
+        """True if the branch starting at chapter c has been played through to
+        an ending (some finished chapter in it has no further chapters)."""
+        kids = [k for k in book.chapters if k.parent == c.id]
+        if not kids:
+            return vn_is_complete(book.id, c.id)
+        return any(dl_branch_finished(book, k) for k in kids)
+
     def dl_node_state(book, c):
         if book.is_unlocked(c):
             return "unlocked"
         if c.parent and vn_is_complete(book.id, c.parent):
+            # Branches are a choice: once one chapter after this parent has
+            # been opened, its siblings stay locked (Unlock All still opens
+            # them, like spending extra keys did in Valve's playtest).
+            # The lock only lasts for the run in progress: once the chosen
+            # branch has been played through to an ending, the other paths
+            # open up for the next run.
+            for o in book.chapters:
+                if (o is not c and o.parent == c.parent and book.is_unlocked(o)
+                        and not dl_branch_finished(book, o)):
+                    return "unreachable"
             return "unlockable"
         return "unreachable"
 
@@ -415,7 +433,11 @@ screen book_detail(book):
                 background Solid(border)
                 hovered SetScreenVariable("hovered", c.id)
                 unhovered SetScreenVariable("hovered", None)
-                action (Return(("play", book.id, c.id)) if state == "unlocked" else NullAction())
+                # no key economy in this restoration: a chapter whose parent is
+                # finished ("unlockable") opens straight away, same as Valve's
+                # unlock-with-a-key but free. Leaving at a chapter-end choice no
+                # longer strands the player.
+                action (Return(("play", book.id, c.id)) if state in ("unlocked", "unlockable") else NullAction())
                 fixed:
                     xysize (200, 120)
                     add Solid("#000000")
@@ -426,7 +448,8 @@ screen book_detail(book):
                     else:
                         add dl_thumb(c.thumb, (200, 120)) matrixcolor SaturationMatrix(0.0) alpha 0.15
                     if state != "unlocked" and dl_ui("lock"):
-                        add dl_ui("lock") xysize (20, 20) align (1.0, 1.0) offset (-10, -10) matrixcolor TintMatrix("#ff2a2a")
+                        # Valve: white lock = can unlock now (.CanAfford), red = can't
+                        add dl_ui("lock") xysize (20, 20) align (1.0, 1.0) offset (-10, -10) matrixcolor TintMatrix("#ffffff" if state == "unlockable" else "#ff2a2a")
                     if is_done:
                         frame:
                             xysize (25, 25)
