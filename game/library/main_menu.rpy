@@ -145,6 +145,7 @@ screen dl_main_menu():
         use dl_main_menu_item(_("Open the Library"), Start(), 0.35)
         use dl_main_menu_item(_("Load"), ShowMenu("load"), 0.42)
         use dl_main_menu_item(_("Preferences"), ShowMenu("preferences"), 0.49)
+        use dl_main_menu_item(_("Extras"), ShowMenu("extras"), 0.53)
         use dl_main_menu_item(_("About"), ShowMenu("about"), 0.56)
         if renpy.variant("pc"):
             use dl_main_menu_item(_("Help"), ShowMenu("help"), 0.63)

@@ -333,6 +333,8 @@ screen navigation():
 
         textbutton _("Preferences") action ShowMenu("preferences")
 
+        textbutton _("Extras") action ShowMenu("extras")
+
         if _in_replay:
 
             textbutton _("End Replay") action EndReplay(confirm=True)
@@ -568,14 +570,14 @@ screen about():
             null height 28
 
             label _("What's missing")
-            text _("• Page art for Ivy's and Holliday's books. Valve never made any: both were built with voice and branching text first, and the Library was removed before illustrations were added. Their pages show each hero's in-game background as a backdrop instead.\n• The key system: in the playtest, chapters cost keys earned by playing matches. Here every chapter is free to read.\n• Some books were unfinished when the Library was removed, so a few pages have no voice or end abruptly.")
+            text _("• Page art for Ivy's and Holliday's books. Valve never made any: both were built with voice and branching text first, and the Library was removed before illustrations were added. Their pages show each hero's in-game background as a backdrop instead.\n• The key system: in the playtest, chapters cost keys earned by playing matches. Here every chapter is free to read.\n• Some books were unfinished when the Library was removed, so a few pages have no voice or end abruptly.\n• One of Dynamo's lines (\"Now his background is Medieval History…\") is cut short in Valve's own files. Dynamo was first voiced by Fred Tatasciore and later re-recorded by John Patrick Lowrie; the re-recorded take of this line was never complete in any build. Fred's original takes, including the full line, are planned as a Restoration Extra.")
             null height 28
 
             label _("Thanks")
             for parts in [
                     [(_("Valve, for making the Library in the first place"), None)],
                     [("Mr. Mindish", about_link_mindish), (_(", for preserving the original page art"), None)],
-        [("Gammaton32", about_link_gammatron), (_(", for sharing the May 2024 build (Dynamo's full line, Valve's original reader)"), None)],
+        [("Gammaton32", about_link_gammatron), (_(", for sharing the May 2024 build"), None)],
                     [(_("The "), None), ("Deadlock Wiki", about_link_wiki), (_(" editors, whose transcripts provide the text"), None)],
                     [(_("The makers of "), None), ("Source 2 Viewer", "https://valveresourceformat.github.io"),
                      (_(" and "), None), ("DepotDownloader", "https://github.com/SteamRE/DepotDownloader")],
