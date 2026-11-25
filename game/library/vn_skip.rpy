@@ -40,6 +40,18 @@ init 5 python:
             n = n.next
         return False
 
+    def _vn_empty_pages_left():
+        """True if another empty page (vn_wait) follows in this chapter."""
+        try:
+            n = renpy.game.script.lookup(renpy.game.context().current).next
+        except Exception:
+            return True
+        while n is not None and not isinstance(n, (_vn_ast.Label, _vn_ast.Return, _vn_ast.Menu)):
+            if isinstance(n, _vn_ast.Python) and "vn_wait(" in n.code.source:
+                return True
+            n = n.next
+        return False
+
     def vn_page(path, bg=None, who=None, intro=False):
         if store.vn_skipping:
             return
@@ -56,6 +68,10 @@ init 5 python:
         if store.vn_skipping:
             return
         if not store.vn_page_art and not _vn_dialogue_left():
+            # the last empty page before the choice (or the chapter's end):
+            # nothing to read or skip, go straight on
+            if not _vn_empty_pages_left():
+                return
             here = store.vn_cur_scene
             if here not in store.vn_skip_declined:
                 store.vn_skip_declined.add(here)

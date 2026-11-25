@@ -1217,26 +1217,29 @@ screen confirm(message, yes_action, no_action):
 
     add Solid("#000000a6") at dl_fade(0.0, 0.15)
 
-    frame:
-        style "dl_modal_frame"
-        at dl_popup_in()
-        vbox:
-            xalign 0.5
-            spacing 0
-            text title style "dl_modal_title"
-            if body:
-                null height 10
-                text body style "dl_modal_body"
-            null height 20
-            hbox:
+    if vn_extra_on("hud_2026"):
+        use dl26_confirm_panel(title, body, yes_action, no_action)
+    else:
+        frame:
+            style "dl_modal_frame"
+            at dl_popup_in()
+            vbox:
                 xalign 0.5
-                spacing 16                  # 8px margin each side
-                textbutton _("Yes"):
-                    style "dl_popup_button"
-                    action yes_action
-                textbutton _("No"):
-                    style "dl_popup_button"
-                    action no_action
+                spacing 0
+                text title style "dl_modal_title"
+                if body:
+                    null height 10
+                    text body style "dl_modal_body"
+                null height 20
+                hbox:
+                    xalign 0.5
+                    spacing 16                  # 8px margin each side
+                    textbutton _("Yes"):
+                        style "dl_popup_button"
+                        action yes_action
+                    textbutton _("No"):
+                        style "dl_popup_button"
+                        action no_action
 
     ## Right-click and escape answer "no".
     key "game_menu" action no_action

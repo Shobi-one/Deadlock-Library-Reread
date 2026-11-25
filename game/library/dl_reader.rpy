@@ -122,25 +122,23 @@ style dl_hint_capframe is frame:
     yalign 0.5
 
 screen dl_keyhint(x, cap, label, act):
+    ## 2024 reader hints in the menu design (same as the menus' ESC Back):
+    ## flat #5f5f5f cap, bold key text, semibold label, 12px gap.
     button:
         style "dl_hint_button"
-        pos (x, 1012)
+        pos (x, 1010)
         action act
         hbox:
             spacing 12
             at dl_hint_fade
-            if cap in ("left", "right"):
-                frame:
-                    style "dl_hint_capframe"
-                    xysize (53, 36)
-                    padding (0, 0)
-                    add ("gui/dl_arrow_%s.png" % cap) align (0.5, 0.5)
-            else:
-                frame:
-                    style "dl_hint_capframe"
-                    padding (10, 2, 10, 0)            # .controlKeyBind padding
-                    text cap style "dl_hint_cap" align (0.5, 0.5)
-            text label style "dl_hint_label" yalign 0.5
+            frame:
+                background Frame(Solid("#5f5f5f"), 4, 4)
+                padding (10, 5)
+                if cap in ("left", "right"):
+                    add Transform("gui/dl_arrow_%s.png" % cap, xysize=(26, 19)) align (0.5, 0.5)
+                else:
+                    text cap style "dl_key_label"
+            text label style "dl_back_label" yalign 0.5
 
 screen dl_reader():
     zorder 50
@@ -151,6 +149,13 @@ screen dl_reader():
     $ leave = nav or Confirm(_("Return to the chapter select?\nThis chapter will not be marked as finished."),
                              Jump("vn_leave_chapter"))
 
+    if vn_extra_on("hud_2026"):
+        use dl_reader_footer_2026(choosing, auto, leave)
+    else:
+        use dl_reader_footer_2024(choosing, auto, leave)
+
+## May 2024 footer (the Library while it was live): default
+screen dl_reader_footer_2024(choosing, auto, leave):
     use dl_keyhint(52, "ESC", vn_str("reader_prev"), leave)     # footer padding 50 + margin 2
     key "K_ESCAPE" action leave
 
@@ -170,6 +175,76 @@ screen dl_reader():
             key "K_LEFT" action Rollback()
         use dl_keyhint(1716, "Space", (vn_str("reader_pause") if auto else vn_str("reader_play")), Preference("auto-forward", "toggle"))
 
+        key "K_RIGHT" action Return(True)
+        key "K_SPACE" action Preference("auto-forward", "toggle")
+
+## ------------------------------------------------------------------
+## 2026 footer (Restoration Extra "hud_2026"): the leftover reader in
+## today's Deadlock, as captured with citadel_book_open: four hints in caps,
+## Arial-style bold (the engine's fallback), dimmed to ~35%, small caps with
+## Valve's keyboard-arrow glyphs, colour-only hover.
+## ------------------------------------------------------------------
+
+define DL26_FONT = "gui/fonts/LiberationSans-Bold.ttf"
+
+transform dl26_fade:
+    on idle:
+        ease 0.15 matrixcolor TintMatrix("#c4c4c4")
+    on hover:
+        ease 0.15 matrixcolor TintMatrix("#ffffff")
+
+style dl26_label is default:
+    font DL26_FONT
+    bold True
+    size 20
+    color "#787064"
+
+style dl26_cap is default:
+    font DL26_FONT
+    bold True
+    size 13
+    color "#040503"
+
+style dl26_capframe is frame:
+    background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix("#6B645B")), 4, 4)
+    ysize 25
+    yalign 0.5
+
+screen dl26_keyhint(x, cap, label, act):
+    button:
+        style "dl_hint_button"
+        pos (x, 1050)
+        yanchor 0.5
+        action act
+        hbox:
+            spacing 6
+            at dl26_fade
+            if cap in ("left", "right"):
+                frame:
+                    style "dl26_capframe"
+                    padding (0, 0)
+                    xsize 25
+                    $ glyph = dl_ui("glyph_arrow_" + cap)
+                    if glyph:
+                        add Transform(glyph, xysize=(24, 24), matrixcolor=TintMatrix("#040503")) align (0.5, 0.5)
+                    else:
+                        add ("gui/dl_tri_left.png" if cap == "left" else "gui/dl_tri_right.png") align (0.5, 0.5)
+            else:
+                frame:
+                    style "dl26_capframe"
+                    padding (7, 0)
+                    text cap style "dl26_cap" align (0.5, 0.5)
+            text label.upper() style "dl26_label" yalign 0.5
+
+screen dl_reader_footer_2026(choosing, auto, leave):
+    use dl26_keyhint(18, "ESC", vn_str("reader_prev"), leave)
+    key "K_ESCAPE" action leave
+    if not vn_page_first:
+        use dl26_keyhint(540, "left", vn_str("reader_prev"), Rollback())
+        key "K_LEFT" action Rollback()
+    if not choosing:
+        use dl26_keyhint(900, "SPACE", (vn_str("reader_pause") if auto else vn_str("reader_play")), Preference("auto-forward", "toggle"))
+        use dl26_keyhint(1296, "right", vn_str("reader_next"), Return(True))
         key "K_RIGHT" action Return(True)
         key "K_SPACE" action Preference("auto-forward", "toggle")
 

@@ -235,18 +235,25 @@ transform dl_tip_in(key=None):
 ## ------------------------------------------------------------------
 
 screen dl_back(act):
+    ## Same ESC hint as the reader footer, following the "Interface: 2026
+    ## style" extra: 2024 (May build) by default, 2026 (today's game) when on.
     key "K_ESCAPE" action act
-    button:
-        xpos 52 ypos 1010
-        background None
-        action act
-        hbox:
-            spacing 12
-            frame:
-                background Frame(Solid("#5f5f5f"), 4, 4)
-                padding (10, 5)
-                text "ESC" style "dl_key_label"
-            text _("Back") style "dl_back_label" yalign 0.5
+    if vn_extra_on("hud_2026"):
+        use dl26_keyhint(18, "ESC", vn_str("reader_prev"), act)
+    else:
+        # 2024 menus: the original menu hint (flat grey cap, ESC + Back)
+        button:
+            xpos 52 ypos 1010
+            background None
+            action act
+            hbox:
+                spacing 12
+                at dl_hint_fade             # same brighten + 2px lift as the reader hints
+                frame:
+                    background Frame(Solid("#5f5f5f"), 4, 4)
+                    padding (10, 5)
+                    text "ESC" style "dl_key_label"
+                text _("Back") style "dl_back_label" yalign 0.5
 
 ## ------------------------------------------------------------------
 ## The Library (book shelf)

@@ -111,3 +111,106 @@ transform dl_popup_in(delay=0.0):
     alpha 0.0 zoom 1.25 yoffset -10
     pause delay
     ease 0.2 alpha 1.0 zoom 1.0 yoffset 0
+
+## ------------------------------------------------------------------
+## 2026 pop-up (Restoration Extra "hud_2026"): today's Deadlock pop-up
+## (popups_shared + citadel_popup_player_feedback, current build):
+## paper texture with a radial edge mask, 600px wide, uppercase 32px title,
+## 18px body, filled pill buttons, faded ESC CLOSE hint.
+## ------------------------------------------------------------------
+
+define DL26_BODY_FONT = ("fonts/radiance-regular.otf" if renpy.loadable("fonts/radiance-regular.otf") else DL_BODY)
+
+transform dl26_popup_in:
+    alpha 0.0 zoom 0.95
+    ease 0.2 alpha 1.0 zoom 1.0
+
+style dl26_modal_frame is frame:
+    background dl_modal_bg()
+    xalign 0.5
+    yalign 0.5
+    xsize 600
+    padding (28, 44, 28, 16)
+
+style dl26_modal_title is default:
+    font DL_SANS
+    size 32
+    color "#C2B6A4"
+    xalign 0.5
+    text_align 0.5
+    kerning 1
+
+style dl26_modal_body is default:
+    font DL26_BODY_FONT
+    size 18
+    color "#8C8476"
+    xalign 0.5
+    text_align 0.5
+    line_spacing 6
+
+style dl26_pill is button:
+    background Frame(Transform("gui/dl_pill.png", matrixcolor=TintMatrix("#8F8779")), 23, 0)
+    hover_background Frame(Transform("gui/dl_pill.png", matrixcolor=TintMatrix("#A9A091")), 23, 0)
+    ysize 46
+    padding (28, 0)
+    xminimum 150
+
+style dl26_pill_text is default:
+    font DL_SANS
+    size 20
+    color "#1B1B19"
+    xalign 0.5
+    yalign 0.5
+
+style dl26_pill_dark is dl26_pill:
+    background Frame(Transform("gui/dl_pill.png", matrixcolor=TintMatrix("#615B52")), 23, 0)
+    hover_background Frame(Transform("gui/dl_pill.png", matrixcolor=TintMatrix("#7A7368")), 23, 0)
+
+style dl26_pill_dark_text is dl26_pill_text
+
+style dl26_esc is frame:
+    background Frame(Transform("gui/dl_keycap.png", matrixcolor=TintMatrix("#57524B")), 4, 4)
+    padding (9, 0)
+    ysize 28
+    yalign 0.5
+
+style dl26_esc_text is default:
+    font "gui/fonts/LiberationSans-Bold.ttf"
+    bold True
+    size 14
+    color "#1B1B19"
+
+style dl26_close is default:
+    font "gui/fonts/LiberationSans-Bold.ttf"
+    bold True
+    size 20
+    color "#625D54"
+
+screen dl26_confirm_panel(title, body, yes_action, no_action):
+    frame:
+        style "dl26_modal_frame"
+        at dl26_popup_in
+        vbox:
+            xalign 0.5
+            text title.upper() style "dl26_modal_title"
+            if body:
+                null height 16
+                text body style "dl26_modal_body"
+            null height 32
+            hbox:
+                xalign 0.5
+                spacing 22
+                textbutton dl_smallcaps(_("Yes")) style "dl26_pill" action yes_action
+                textbutton dl_smallcaps(_("No")) style "dl26_pill_dark" action no_action
+            null height 66
+            button:
+                style "dl_hint_button"
+                xalign 0.5
+                action no_action
+                hbox:
+                    spacing 8
+                    at dl26_fade
+                    frame:
+                        style "dl26_esc"
+                        text "ESC" style "dl26_esc_text" align (0.5, 0.5)
+                    text _("CLOSE") style "dl26_close" yalign 0.5

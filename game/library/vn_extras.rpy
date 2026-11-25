@@ -15,6 +15,11 @@ init -1 python:
              desc=_("The Infernus book opens with the same scene as Lady Geist's chapter 3b, "
                     "\"Hunger Strike\". Valve shipped this book without sound; this extra plays "
                     "Geist's matching 3b voice lines on those pages.")),
+        dict(id="hud_2026", ready=True,
+             title=_("Interface: 2026 style"),
+             desc=_("Swaps the reader's key hints from the 2024 version (the Library while it was live) "
+                    "to the leftover version still in today's Deadlock (four hints in capitals, dimmed, "
+                    "in the game's fallback font), and pop-ups to today's paper-style dialog.")),
         dict(id="dynamo_fred", ready=False,
              title=_("Dynamo's original voice (Fred Tatasciore)"),
              desc=_("Dynamo was first voiced by Fred Tatasciore before Valve re-recorded his lines "

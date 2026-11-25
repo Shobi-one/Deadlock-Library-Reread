@@ -23,7 +23,7 @@ define gui.show_name = True
 
 ## The version of the game.
 
-define config.version = "1.0"
+define config.version = "1.1"
 
 ## Links on the About screen (leave "" to show plain text)
 define about_link_author  = "https://x.com/Shobi_one"                        # your X profile, e.g. https://x.com/<handle>

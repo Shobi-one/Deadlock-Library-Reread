@@ -25,8 +25,30 @@ init -1 python:
             n = n.next
         return False
 
+    def _vn_norm(t):
+        return " ".join(str(t).lower().split())
+
+    def _vn_is_choice_summary(what):
+        """The wiki lists a chapter's choices as one line ("A - B - C") just
+        before them. That's not dialogue: the choice screen shows them."""
+        if " - " not in what:
+            return False
+        try:
+            n = renpy.game.script.lookup(renpy.game.context().current).next
+        except Exception:
+            return False
+        while n is not None and not isinstance(n, (_vnn_ast.Label, _vnn_ast.Return)):
+            if isinstance(n, _vnn_ast.Menu):
+                caps = set(_vn_norm(i[0]) for i in n.items if i[0])
+                parts = [_vn_norm(x) for x in what.split(" - ")]
+                return all(x in caps for x in parts)
+            n = n.next
+        return False
+
     class VNNarrator(ADVCharacter):
         def __call__(self, what, interact=True, *args, **kwargs):
+            if interact and _vn_is_choice_summary(what):
+                return
             if (interact and store.vn_page_art and renpy.get_screen("dl_reader")
                     and not store.vn_skipping):
                 try:
