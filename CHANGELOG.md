@@ -2,6 +2,8 @@
 
 ## v1.1 (25 Nov 2026)
 
+Version number in the game set to 1.1.
+
 ### Audio
 - **Dynamo's "Medieval History" line (Geist 3a, page 2) kept as Valve shipped it.**
   John Patrick Lowrie's take, the one in every Steam build (Sep, Nov and Dec 2024), cuts
@@ -14,20 +16,16 @@
   re-recorded by John Patrick Lowrie later. The shipped (John) versions are kept.
 
 ### Reader
-- **Footer rebuilt 1:1 from Valve's reader in the May 2024 build** (the Library was
-  live then):
+- **Footer layout rebuilt 1:1 from Valve's reader in the May 2024 build** (the Library
+  was live then):
   - three hints: ESC Back, → Next, Space Play;
   - ← Back + → Next shown as a centred pair, Next alone on a chapter's first page,
     Back alone at a choice;
-  - fonts from that build's own style sheets: Retail Demo 18 px labels and Retail Demo
-    Bold key caps;
-  - key caps #53504F, at least 32 px tall, 10 px side padding; arrow caps 53×36 with a
-    white arrow;
   - exact positions (52 / 817–963 / 1716);
   - hover: brightness and 2 px lift over 0.1 s (from Valve's CSS).
-- **Footer and menu hints now share one design:** the flat grey key cap and menu fonts
-  from the original menu Back hint. The layout and behaviour are the May 2024 ones above,
-  and the menus' ESC Back hint got the same hover.
+- **Footer and menu hints share one look:** the flat grey key caps and fonts of the
+  original menu Back hint, with thick arrow caps for ← and →. The menus' ESC Back hint
+  got the same hover.
 - **Wiki stage directions hidden on pages with real art** (Geist, Infernus). Lines like
   "Lady Geist goes outside." were added by wiki editors, not Valve. Sound-effect pages
   still play their sound, and the lines stay in the History log. Ivy and Holliday keep
@@ -97,3 +95,19 @@
 ## v1.0
 - First playable build: the Library shelf, chapter tree and reader rebuilt in Ren'Py,
   four books, Valve's voice lines and the original page art for Lady Geist and Infernus.
+- **Books without art (Ivy, Holliday):** temporary page backgrounds taken from the game
+  files, a "No artwork was made for this book" label, and a centred text panel so long
+  lines no longer get cut off.
+- **"No transcript" handling:** empty pages show "No transcript for this line". When the
+  rest of a chapter has no transcript, a pop-up offers to go to the next scene. Fixed a
+  loop after jumping to another branch.
+- **Branches:** the other choices lock again until the chosen branch reaches an ending;
+  pressing ESC at a choice now warns before leaving; finished paths stay visible on a
+  new run.
+- Fixed the H key turning the screen black, the disclaimer soft-lock when opened from
+  About, and the checkerboard flash when a new scene loads.
+- Wraith and Lash name colours.
+- Confirm dialog styled like Deadlock's pop-ups; reader footer and buttons in Valve's
+  fonts.
+- About page with working links and credits.
+- Game icon, and the game renamed to The Library Reread.
